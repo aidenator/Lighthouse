@@ -329,8 +329,15 @@ typedef struct actor_s{
     uintptr_t unk154;
     ParticleEmitter *unk158[2];
     void *unk160; //saved marker->unk54
-    u8  unk164[0x2];
-    u8  unk166;
+    // [port] The game indexes unk164 as three hit counters, so the third is unk166. Declared as a
+    // two-byte array, writing or reading [2] is undefined and -O3 does not keep it.
+    union {
+        u8 unk164[0x3];
+        struct {
+            u8 pad164[0x2];
+            u8 unk166;
+        };
+    };
     s8  pad167[0x1];
     uintptr_t unk168; //saved marker->unk58
     u32  unk16C_31:27; //saved s1->marker->unk5C

@@ -1,5 +1,6 @@
 // This file should eventually replace libultraship's os_mesg.cpp
 
+#include <chrono>
 #include <atomic>
 #include <condition_variable>
 #include <map>
@@ -90,6 +91,13 @@ void osCreateMesgQueue(OSMesgQueue* mq, OSMesg* msgBuf, int32_t count) {
     sQueueSync[mq];
 }
 
+// Time the calling thread has spent blocked on message queues, for timing its busy work
+static thread_local double tBlockedMs = 0;
+
+extern "C" double OS_ThreadBlockedMs(void) {
+    return tBlockedMs;
+}
+
 int32_t osSendMesg(OSMesgQueue* mq, OSMesg msg, int32_t flag) {
     std::unique_lock<std::mutex> lock(sMesgMutex);
     QueueSync& sync = SyncFor(mq);
@@ -102,7 +110,11 @@ int32_t osSendMesg(OSMesgQueue* mq, OSMesg msg, int32_t flag) {
         if (waitSlot < 0) {
             waitSlot = MarkBlockedWait(mq, 1);
         }
-        sync.notFull.wait(lock);
+        {
+            const auto waitStart = std::chrono::steady_clock::now();
+            sync.notFull.wait(lock);
+            tBlockedMs += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - waitStart).count();
+        }
     }
     ClearBlockedWait(waitSlot);
     s32 last = (mq->first + mq->validCount) % mq->msgCount;
@@ -126,7 +138,11 @@ int32_t osJamMesg(OSMesgQueue* mq, OSMesg msg, int32_t flag) {
         if (waitSlot < 0) {
             waitSlot = MarkBlockedWait(mq, 1);
         }
-        sync.notFull.wait(lock);
+        {
+            const auto waitStart = std::chrono::steady_clock::now();
+            sync.notFull.wait(lock);
+            tBlockedMs += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - waitStart).count();
+        }
     }
     ClearBlockedWait(waitSlot);
     mq->first = (mq->first + mq->msgCount - 1) % mq->msgCount;
@@ -148,7 +164,11 @@ int32_t osRecvMesg(OSMesgQueue* mq, OSMesg* msg, int32_t flag) {
         if (waitSlot < 0) {
             waitSlot = MarkBlockedWait(mq, 0);
         }
-        sync.notEmpty.wait(lock);
+        {
+            const auto waitStart = std::chrono::steady_clock::now();
+            sync.notEmpty.wait(lock);
+            tBlockedMs += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - waitStart).count();
+        }
     }
     ClearBlockedWait(waitSlot);
     if (msg != nullptr) {

@@ -20,6 +20,9 @@
 #include <SDL2/SDL.h>
 
 #include "Controller/ControlSchemes.h"
+#ifdef __3DS__
+#include <fast/backends/gfx_3ds.h>
+#endif
 #include "DevTools/ThreadWatchdog.h"
 #include "GameStatus.h"
 #include "Interpolation/FrameInterpolation.h"
@@ -52,7 +55,11 @@ u32 osDpGetStatus(void);
 namespace {
 std::atomic<bool> sGameThreadDone{ false };
 std::thread sGameThread;
+#ifdef __3DS__
+void* sGameThread3ds = nullptr;
+#endif
 thread_local bool tIsGameThread = false;
+extern "C" double OS_ThreadBlockedMs(void); // OS/OS_Mesg.cpp
 
 // The interpolation pair a submitted list was built from, carried to whoever
 // renders it. At most a couple are live at once.
@@ -413,14 +420,55 @@ int SDL_main(int argc, char* argv[]) {
     core1_init();
     ThreadWatchdog_Start();
 
-    sGameThread = std::thread([] {
+    static const auto gameLoop = [] {
         tIsGameThread = true;
+#ifdef __3DS__
+        // How long each game frame (logic and building the display list) takes, for the log
+        using Clock = std::chrono::steady_clock;
+        auto summaryStart = Clock::now();
+        double totalMs = 0;
+        double worstMs = 0;
+        double waitedMs = 0;
+        int frames = 0;
+#endif
         while (WindowIsRunning()) {
             ThreadWatchdog_Beat(WATCHDOG_GAME_TICK);
+#ifdef __3DS__
+            const auto frameStart = Clock::now();
+            const double blockedBefore = OS_ThreadBlockedMs();
+#endif
             push_frame();
+#ifdef __3DS__
+            const double blocked = OS_ThreadBlockedMs() - blockedBefore;
+            const double ms =
+                std::chrono::duration<double, std::milli>(Clock::now() - frameStart).count() - blocked;
+            waitedMs += blocked;
+            totalMs += ms;
+            worstMs = std::max(worstMs, ms);
+            frames++;
+            if (Clock::now() - summaryStart >= std::chrono::seconds(3)) {
+                printf("game: busy %.1f ms per frame (worst %.0f), waiting %.1f\n", totalMs / frames, worstMs,
+                       waitedMs / frames);
+                summaryStart = Clock::now();
+                waitedMs = 0;
+                totalMs = 0;
+                worstMs = 0;
+                frames = 0;
+            }
+#endif
         }
         sGameThreadDone.store(true);
-    });
+    };
+#ifdef __3DS__
+    // On a New 3DS the game logic gets core 2 to itself, alongside the renderer on core 0
+    sGameThread3ds = Fast::Start3dsThreadOnCore([](void*) { gameLoop(); }, nullptr, 2);
+    printf("Game thread on core %d\n", sGameThread3ds != nullptr ? 2 : 0);
+    if (sGameThread3ds == nullptr) {
+        sGameThread = std::thread(gameLoop);
+    }
+#else
+    sGameThread = std::thread(gameLoop);
+#endif
     while (WindowIsRunning() || !sGameThreadDone.load()) {
         ThreadWatchdog_Beat(WATCHDOG_MAIN_LOOP);
         port_noteMainLoopAlive();
@@ -457,6 +505,11 @@ int SDL_main(int argc, char* argv[]) {
     sSvcCv.notify_all();
     OS_BeginShutdown();
 
+#ifdef __3DS__
+    if (sGameThread3ds != nullptr) {
+        Fast::Join3dsThread(sGameThread3ds);
+    }
+#endif
     if (sGameThread.joinable()) {
         sGameThread.join();
     }
