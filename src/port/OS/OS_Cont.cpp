@@ -89,7 +89,12 @@ int32_t __osMotorAccess(OSPfs* pfs, uint32_t vibrate) {
 
 int32_t osMotorInit(OSMesgQueue* ctrlrqueue, OSPfs* pfs, int32_t channel) {
     pfs->channel = channel;
+#ifdef LH_SLIM
+    // Report no Rumble Pak so the game never starts its motor thread
+    return PFS_ERR_NOPACK;
+#else
     return 0;
+#endif
 }
 
 // Controller Pak gets probed first, the return kickstarts rumble

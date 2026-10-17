@@ -1,0 +1,311 @@
+// Stand-ins for the menu, mod manager and extractor entry points that LH_SLIM builds leave out.
+// Popups and notifications go to the log; mods and romhacks are never loaded.
+
+#include <filesystem>
+#include <memory>
+#include <string>
+
+#include <libultraship/libultraship.h>
+#include <spdlog/spdlog.h>
+
+#include "port/build.h"
+#include "port/Engine.h"
+#include "port/Enhancements/Events/Hooks/Events.h"
+#include "port/Extractor/ExtractFlow.h"
+#include "port/FilePicker.h"
+#include "port/Nametag/Nametag.h"
+#include "port/Network/Anchor/FightSync.h"
+#include "port/Rando/Rando.h"
+#include "port/UI/LighthouseGui.hpp"
+#include "port/UI/LighthouseModMenuWindow.h"
+#include "port/UI/Notification.h"
+
+extern "C" {
+#include "variables.h"
+}
+
+// Menus
+
+namespace LighthouseGui {
+void SetupMenu() {
+}
+
+void SetupGuiElements() {
+}
+
+void Draw() {
+}
+
+void Destroy() {
+}
+
+void RegisterPopup(std::string title, std::string message, std::string button1, std::string button2,
+                   std::function<void()> button1callback, std::function<void()> button2callback) {
+    SPDLOG_WARN("[Popup] {}: {}", title, message);
+}
+
+size_t PopupsQueued() {
+    return 0;
+}
+} // namespace LighthouseGui
+
+namespace Notification {
+void Emit(Options notification) {
+    SPDLOG_INFO("[Notification] {}{}{}", notification.prefix, notification.message, notification.suffix);
+}
+} // namespace Notification
+
+// Mods and romhacks
+
+void UpdateModFiles(bool init, bool reset) {
+}
+
+bool IsScopedModFolderName(const std::string& topLevelName) {
+    return false;
+}
+
+std::string GetActiveRomhackBasename() {
+    return "";
+}
+
+void EnableMod(std::string file) {
+}
+
+void DisableMod(std::string file) {
+}
+
+void MaybeShowModConflictPopup() {
+}
+
+void MaybeShowRomhackBaseMismatchPopup() {
+}
+
+void SetSoleEnabledRomhack(const std::string& keepBasename) {
+}
+
+bool IsInlineModExtractionBusy() {
+    return false;
+}
+
+void Lighthouse::PickFile(Ship::FileBrowserRequest request,
+                          std::function<void(std::optional<std::filesystem::path>)> onResult) {
+    onResult(std::nullopt); // no file browser: report a cancelled pick
+}
+
+// Randomizer: only the active-file tracking survives, since retention enhancements read it
+
+int16_t selectedFileNum = DEFAULT_FILE_NUM;
+
+void Rando::Init() {
+    REGISTER_LISTENER(OnGameLoad, EVENT_PRIORITY_NORMAL,
+                      [](IEvent* event) { selectedFileNum = ((OnGameLoad*)event)->fileNum; });
+    REGISTER_LISTENER(OnLoadFileSelect, EVENT_PRIORITY_NORMAL, [](IEvent* event) { selectedFileNum = DEFAULT_FILE_NUM; });
+}
+
+// Nametags only label remote players
+
+void Nametag::SetSubframeBlend(float blend) {
+}
+
+void Nametag::SubmitFrame(const void* key) {
+}
+
+void Nametag::BeginRenderPass(const void* key, bool interpolate) {
+}
+
+// Multiplayer sync hooks, matching the real ones' offline behaviour (never connected, world sync inactive)
+
+extern "C" {
+s32 port_anchor_isConnected(void) {
+    return 0;
+}
+
+s32 port_anchor_isWorldSyncActive(void) {
+    return 0;
+}
+
+s32 port_anchor_getDummyTransform(u32 clientId, f32 pos[3], f32* yaw) {
+    return 0;
+}
+
+void port_anchor_onCarryThrow(s32 markerId, f32 start[3], f32 target[3]) {
+    CALL_EVENT(OnCarryThrow, markerId, start, target); // fires before the connection check
+}
+
+void port_anchorDummies_onActorsFreed(void) {
+}
+
+int32_t port_mapFlag_wasSetRemotely(int32_t index) {
+    return 0;
+}
+
+int32_t port_breakable_isBroken(int32_t map, int32_t markerId, int32_t x, int32_t y, int32_t z) {
+    return 0;
+}
+
+void port_breakable_recordBreak(int32_t markerId, int32_t x, int32_t y, int32_t z) {
+}
+
+void port_breakable_broadcastBreak(int32_t markerId, int32_t x, int32_t y, int32_t z) {
+}
+
+int32_t port_hutSmash_get(int32_t x, int32_t y, int32_t z) {
+    return -1;
+}
+
+void port_hutSmash_record(int32_t x, int32_t y, int32_t z, int32_t loot) {
+}
+
+int32_t port_hutSmash_countForCurrentLevel(int32_t localCount) {
+    return localCount;
+}
+
+int32_t port_eggToll_getStage(int32_t map, int32_t secondaryId) {
+    return 0;
+}
+
+void port_eggToll_onAdvance(int32_t map, int32_t secondaryId, int32_t stage) {
+}
+
+int32_t port_puzzleStep_get(int32_t puzzleId) {
+    return 0;
+}
+
+int32_t port_puzzleStep_getForMap(int32_t map, int32_t puzzleId) {
+    return 0;
+}
+
+void port_puzzleStep_orBits(int32_t puzzleId, int32_t bits) {
+}
+
+int32_t port_puzzleCount_get(int32_t counterId) {
+    return 0;
+}
+
+int32_t port_puzzleCount_add(int32_t counterId, int32_t localCount, int32_t delta) {
+    return localCount + delta;
+}
+
+int32_t port_puzzlePos_isMarked(int32_t puzzleId, int32_t x, int32_t y, int32_t z) {
+    return 0;
+}
+
+void port_puzzlePos_mark(int32_t puzzleId, int32_t x, int32_t y, int32_t z) {
+}
+
+int32_t port_lairWater_targetLevel(int32_t map, int32_t flagLevel) {
+    return flagLevel;
+}
+
+void port_lairWater_onRiseTrigger(int32_t waterMap, int32_t levelFlag) {
+}
+
+void port_ccWater_broadcastRise(int32_t map, int32_t waterId, int32_t targetDy, f32 duration) {
+}
+
+void port_jiggyCrane_broadcast(int32_t stage) {
+}
+
+void port_fpTwinkly_release(void) {
+}
+
+int32_t port_jigsawPedestal_tryClaim(int32_t id) {
+    return 1;
+}
+
+int32_t port_jigsawPedestal_isSelf(int32_t id) {
+    return 1;
+}
+
+void port_jigsawPedestal_release(int32_t id) {
+}
+
+bool FightSync_BossFollowerTick(void* boss) {
+    return false;
+}
+
+bool FightSync_ForwardBossHit(int32_t phase) {
+    return false;
+}
+
+bool FightSync_ForwardEgg(int32_t statue_id, int32_t pad_index) {
+    return false;
+}
+
+void FightSync_ReplicateEgg(int32_t statue_id, int32_t pad_index) {
+}
+
+void FightSync_OnBossSpawned(void) {
+}
+
+void FightSync_OnBossDefeated(void) {
+}
+
+void FightSync_OnSpellSpawned(s32 kind) {
+}
+
+void FightSync_OnStatueSpawned(s32 statue_id) {
+}
+
+void FightSync_OnJinjoSlam(s32 statue_id) {
+}
+
+void FightSync_OnBarrierSpawned(void) {
+}
+
+void FightSync_OnFlightPadSpawned(void) {
+}
+
+void FightSync_OnFlightPadDespawned(void) {
+}
+} // extern "C"
+
+// Called from C++ with C++ linkage (TransientLevelState)
+void port_breakable_clearForLevel(int32_t levelId) {
+}
+
+void port_hutSmash_clearForLevel(int32_t levelId) {
+}
+
+void port_eggToll_clearForLevel(int32_t levelId) {
+}
+
+void port_puzzleStep_clearForLevel(int32_t levelId) {
+}
+
+// Extraction: bk.o2r must already exist, generated on a PC
+
+static bool ArchiveVersionMatches(const std::string& path) {
+    auto archive = std::make_shared<Ship::O2rArchive>(path);
+    if (!archive->Open()) {
+        return false;
+    }
+    auto file = archive->LoadFile("portVersion");
+    if (file == nullptr || !file->IsLoaded) {
+        return false;
+    }
+    auto stream = std::make_shared<Ship::MemoryStream>(file->Buffer->data(), file->Buffer->size());
+    auto reader = std::make_shared<Ship::BinaryReader>(stream);
+    reader->SetEndianness(Ship::Endianness::Big);
+    const uint16_t major = reader->ReadUInt16();
+    const uint16_t minor = reader->ReadUInt16();
+    return major == gBuildVersionMajor && minor == gBuildVersionMinor;
+}
+
+void GameEngine::RunExtract(int argc, char* argv[]) {
+    if (!portArchiveVersionMatch) {
+        SPDLOG_CRITICAL("lighthouse.o2r is missing");
+        exit(1);
+    }
+    for (const auto& archive : kRomArchives) {
+        const std::string path = Ship::Context::LocateFileAcrossAppDirs(archive, "bk");
+        if (!std::filesystem::exists(path)) {
+            SPDLOG_CRITICAL("{} is missing; generate it from the ROM with a PC build of Lighthouse", archive);
+            exit(1);
+        }
+        if (!ArchiveVersionMatches(path)) {
+            SPDLOG_CRITICAL("{} was made by a different Lighthouse version; regenerate it", archive);
+            exit(1);
+        }
+    }
+}

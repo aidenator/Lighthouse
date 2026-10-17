@@ -27,6 +27,16 @@ typedef enum WatchdogThread {
     WATCHDOG_NUM_THREADS
 } WatchdogThread;
 
+#ifdef LH_SLIM
+// Slim builds drop the watcher thread; every hook compiles away.
+static inline void ThreadWatchdog_Beat(WatchdogThread id) { (void)id; }
+static inline void ThreadWatchdog_Start(void) {}
+static inline void ThreadWatchdog_Stop(void) {}
+static inline void ThreadWatchdog_DumpNow(void) {}
+static inline void ThreadWatchdog_BeginExpectedStall(const char* reason) { (void)reason; }
+static inline void ThreadWatchdog_EndExpectedStall(void) {}
+static inline int ThreadWatchdog_IsStalled(WatchdogThread id) { (void)id; return 0; }
+#else
 // Called once per loop iteration; one relaxed atomic increment.
 void ThreadWatchdog_Beat(WatchdogThread id);
 
@@ -45,6 +55,7 @@ void ThreadWatchdog_EndExpectedStall(void);
 // draws inside serviced frames, so the main loop uses this to keep drawing
 // while the tick is down instead of freezing ImGui along with it.
 int ThreadWatchdog_IsStalled(WatchdogThread id);
+#endif
 
 // Diagnostic snapshots served by the decomp thread owners; plain structs so
 // the C side fills them without knowing about the watchdog's internals.

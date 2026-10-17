@@ -159,6 +159,11 @@ endif()
 
 # Set game compilation version
 set(VERSION us)
+option(LH_SLIM "Strip extras (networking, rumble, extractor, rando, dev tools, menus) for constrained targets" OFF)
+if(LH_SLIM)
+    set(USE_NETWORKING OFF CACHE BOOL "Enable networking features" FORCE)
+    add_compile_definitions(LH_SLIM=1)
+endif()
 option(USE_NETWORKING "Enable networking features" ON)
 set(SKIP_XCODE_VERSION_CHECK ON)
 
@@ -224,6 +229,17 @@ file(GLOB_RECURSE ALL_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 list(FILTER ALL_FILES EXCLUDE REGEX "src/unused/")
+
+if(LH_SLIM)
+    # Features with no place on a constrained target. Headers stay on the include path;
+    # remaining call sites are guarded with LH_SLIM.
+    list(FILTER ALL_FILES EXCLUDE REGEX "src/port/(Rando|Network|DevTools|Presets|Nametag|Extractor|UI|Enhancements/Trackers)/.*\\.(c|cpp)$")
+    list(FILTER ALL_FILES EXCLUDE REGEX "src/port/(FilePicker|Controller/Mapper)\\.cpp$")
+    # Bundle drop physics live with the randomizer but note retention uses them too
+    list(APPEND ALL_FILES "src/port/Rando/CustomObject/CustomObjectSettings.cpp")
+else()
+    list(FILTER ALL_FILES EXCLUDE REGEX "src/port/Slim/")
+endif()
 
 list(APPEND ALL_FILES ${CMAKE_CURRENT_SOURCE_DIR}/res/Resource.rc ${CMAKE_BINARY_DIR}/generated/build.c)
 
@@ -507,8 +523,14 @@ option(BUILD_FZERO "Build with F-Zero X support" OFF)
 option(BUILD_OOT "Build with Ocarina of Time support" OFF)
 option(BUILD_MARIO_ARTIST "Build with Mario Artist support" OFF)
 option(BUILD_NAUDIO "Build with NAudio support" OFF)
-add_subdirectory(Torch)
-target_link_libraries(${PROJECT_NAME} PRIVATE torch "${ADDITIONAL_LIBRARY_DEPENDENCIES}")
+if(LH_SLIM)
+    # No in-game extraction: bk.o2r is generated on a PC. Only Torch's resource type ids are needed.
+    target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Torch/src)
+    target_link_libraries(${PROJECT_NAME} PRIVATE "${ADDITIONAL_LIBRARY_DEPENDENCIES}")
+else()
+    add_subdirectory(Torch)
+    target_link_libraries(${PROJECT_NAME} PRIVATE torch "${ADDITIONAL_LIBRARY_DEPENDENCIES}")
+endif()
 
 if(CMAKE_SYSTEM_NAME MATCHES "NintendoSwitch")
 

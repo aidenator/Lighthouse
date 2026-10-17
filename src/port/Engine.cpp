@@ -30,9 +30,16 @@
 
 #include "build.h"
 #include "Extractor/ExtractFlow.h"
+#ifdef LH_SLIM
+#include <factories/ResourceType.h>
+extern "C" {
+#include "core1/main.h"
+}
+#else
 #include "Extractor/GameExtractor.h"
 #include "ship/window/gui/FileBrowserWindow.h"
 #include "Network/Anchor/Anchor.h"
+#endif
 #include "port/Enhancements/Events/PortEnhancements.h"
 #include "port/Patches/Patches.h"
 #include "port/Save/SaveManager.h"
@@ -138,6 +145,7 @@ GameEngine::GameEngine() {
 
     LighthouseGui::SetupMenu();
 
+#ifndef LH_SLIM
     if (portArchiveVersionMatch) {
         fontMono = CreateFontWithSize(16.0f, "fonts/Inconsolata-Regular.ttf");
         fontMonoLarger = CreateFontWithSize(20.0f, "fonts/Inconsolata-Regular.ttf");
@@ -151,6 +159,7 @@ GameEngine::GameEngine() {
     previousImGuiScaleIndex = -1;
     previousImGuiScale = defaultImGuiScale;
     ScaleImGui();
+#endif
 }
 
 // Startup
@@ -377,7 +386,9 @@ void GameEngine::Create(int argc, char* argv[]) {
     instance->RunExtract(argc, argv);
     instance->FinishInit();
     PortEnhancements_Init();
+#ifndef LH_SLIM
     Anchor::Init();
+#endif
     SaveManager_Init();
     ShipInit::InitAll();
     ShipInit::Init("BOOT");
