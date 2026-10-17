@@ -296,6 +296,11 @@ void GameEngine::ProcessGfxCommands(Gfx* commands) {
 }
 
 uint32_t GameEngine::GetInterpolationFPS() {
+#ifdef LH_SLIM
+    // No frame interpolation on constrained targets: render at the game's own rate, which also
+    // skips recording interpolation data each tick.
+    return EffectiveLogicFps();
+#endif
     if (CVarGetInteger(CVAR_SETTING("MatchRefreshRate"), 0)) {
         return Ship::Context::GetRawInstance()->GetWindow()->GetCurrentRefreshRate();
 

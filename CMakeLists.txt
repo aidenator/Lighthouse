@@ -159,6 +159,24 @@ endif()
 
 # Set game compilation version
 set(VERSION us)
+if(CMAKE_SYSTEM_NAME STREQUAL "Nintendo3DS")
+    # newlib on ARM makes int32_t a long, which clashes with the decomp's s32 (an int). Both are
+    # 32 bits, so redefine the 32-bit stdint types as int/unsigned. Dependencies must be built with
+    # the same flags (see tools/docker/3ds.Dockerfile).
+    add_compile_options(
+        -U__INT32_TYPE__ -D__INT32_TYPE__=int -U__UINT32_TYPE__ -D__UINT32_TYPE__=unsigned
+        -U__INT_LEAST32_TYPE__ -D__INT_LEAST32_TYPE__=int -U__UINT_LEAST32_TYPE__ -D__UINT_LEAST32_TYPE__=unsigned
+    )
+    # Bare-metal ARM defaults to one-byte enums and unsigned char; the game and port code assume
+    # int enums (-1 sentinels, struct layouts) and signed char, as on PC. libctru, citro3d and the
+    # other dependencies are rebuilt to match; newlib/libstdc++ enums are int-sized by design, so
+    # the linker's enum-size mismatch warning about them is silenced.
+    add_compile_options(-fno-short-enums -fsigned-char)
+    add_link_options(-Wl,--no-enum-size-warning)
+    # libctru has its own osGetTime(); rename libultra's, as sm64_3ds does
+    add_compile_definitions(osGetTime=n64_osGetTime)
+endif()
+
 option(LH_SLIM "Strip extras (networking, rumble, extractor, rando, dev tools, menus) for constrained targets" OFF)
 if(LH_SLIM)
     set(USE_NETWORKING OFF CACHE BOOL "Enable networking features" FORCE)
@@ -185,7 +203,7 @@ add_compile_definitions(
 )
 
 # Find necessary libraries
-if (UNIX AND NOT APPLE)
+if (UNIX AND NOT APPLE AND NOT CMAKE_SYSTEM_NAME STREQUAL "Nintendo3DS")
     find_package(OpenGL REQUIRED)
 endif()
 
@@ -498,6 +516,10 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
     target_include_directories(${PROJECT_NAME} PRIVATE
         ${DEVKITPRO}/portlibs/wiiu/include/
     )
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Nintendo3DS")
+    # Nothing calls Ogg/Vorbis; SDL2 provides input and audio output
+    find_package(SDL2 REQUIRED)
+    set(ADDITIONAL_LIBRARY_DEPENDENCIES SDL2::SDL2main SDL2::SDL2-static) # SDL2main supplies main()
 else()
     find_package(Ogg REQUIRED)
     find_package(Vorbis REQUIRED)
@@ -548,6 +570,15 @@ nx_create_nro(${PROJECT_NAME}
 )
 
 INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.nro DESTINATION . COMPONENT ${PROJECT_NAME})
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Nintendo3DS")
+    ctr_generate_smdh(${PROJECT_NAME}.smdh
+        NAME "${PROJECT_NAME}"
+        DESCRIPTION "Banjo-Kazooie"
+        AUTHOR "HarbourMasters (3DS port)"
+    )
+    ctr_create_3dsx(${PROJECT_NAME} SMDH ${PROJECT_NAME}.smdh)
 endif()
 
 ################################################################################
@@ -763,7 +794,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
   endif()
 endif()
 
-if(NOT CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
+if(NOT CMAKE_SYSTEM_NAME MATCHES "NintendoSwitch|Nintendo3DS")
 include(ExternalProject)
 ExternalProject_Add(TorchExternal
 	PREFIX TorchExternal
