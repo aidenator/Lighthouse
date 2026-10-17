@@ -258,11 +258,21 @@ static void LoadLanguagePacks() {
     }
 }
 
+#ifdef LH_SLIM
+bool Slim_ArchiveVersionMatches(const std::shared_ptr<Ship::Archive>& archive); // Slim/SlimStubs.cpp
+#endif
+
 void GameEngine::FinishInit() {
     for (const auto& archive : kRomArchives) {
         std::string romPath = Ship::Context::LocateFileAcrossAppDirs(archive, "bk");
         if (std::filesystem::exists(romPath)) {
-            context->GetResourceManager()->GetArchiveManager()->AddArchive(romPath);
+            auto added = context->GetResourceManager()->GetArchiveManager()->AddArchive(romPath);
+#ifdef LH_SLIM
+            if (!Slim_ArchiveVersionMatches(added)) {
+                SPDLOG_CRITICAL("{} was made by a different Lighthouse version; regenerate it", archive);
+                exit(1);
+            }
+#endif
         }
     }
 

@@ -275,9 +275,10 @@ void port_puzzleStep_clearForLevel(int32_t levelId) {
 
 // Extraction: bk.o2r must already exist, generated on a PC
 
-static bool ArchiveVersionMatches(const std::string& path) {
-    auto archive = std::make_shared<Ship::O2rArchive>(path);
-    if (!archive->Open()) {
+// Checked on the archive FinishInit opens: opening bk.o2r costs seconds on the 3DS, mostly
+// indexing its file list, so it must not be opened just for this
+bool Slim_ArchiveVersionMatches(const std::shared_ptr<Ship::Archive>& archive) {
+    if (archive == nullptr) {
         return false;
     }
     auto file = archive->LoadFile("portVersion");
@@ -301,10 +302,6 @@ void GameEngine::RunExtract(int argc, char* argv[]) {
         const std::string path = Ship::Context::LocateFileAcrossAppDirs(archive, "bk");
         if (!std::filesystem::exists(path)) {
             SPDLOG_CRITICAL("{} is missing; generate it from the ROM with a PC build of Lighthouse", archive);
-            exit(1);
-        }
-        if (!ArchiveVersionMatches(path)) {
-            SPDLOG_CRITICAL("{} was made by a different Lighthouse version; regenerate it", archive);
             exit(1);
         }
     }

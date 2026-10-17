@@ -6,6 +6,8 @@
 #include <zip.h>
 
 #include "ship/Context.h"
+#include "ship/resource/archive/ArchiveManager.h"
+#include "ship/resource/archive/Archive.h"
 #include <spdlog/spdlog.h>
 
 namespace Lighthouse {
@@ -28,7 +30,32 @@ uint32_t ByteSwap32(uint32_t v) {
     return (v >> 24) | ((v >> 8) & 0x0000FF00u) | ((v << 8) & 0x00FF0000u) | (v << 24);
 }
 
+bool ReadStampedCrcFromArchive(const std::shared_ptr<Ship::Archive>& archive, uint32_t& outCrc) {
+    auto file = archive->LoadFile("version");
+    if (file == nullptr || !file->IsLoaded || file->Buffer->size() < 5) {
+        return false;
+    }
+    const auto& buf = *file->Buffer;
+    outCrc = (static_cast<uint32_t>((uint8_t)buf[1]) << 24) | (static_cast<uint32_t>((uint8_t)buf[2]) << 16) |
+             (static_cast<uint32_t>((uint8_t)buf[3]) << 8) | static_cast<uint32_t>((uint8_t)buf[4]);
+    return true;
+}
+
 bool ReadStampedCrc(const std::string& archivePath, uint32_t& outCrc) {
+    // Use the archive the resource manager already has open if it is this one: opening it
+    // again parses its whole file list, which takes seconds on the 3DS
+    auto ctx = Ship::Context::GetRawInstance();
+    if (ctx != nullptr && ctx->GetResourceManager() != nullptr) {
+        auto archives = ctx->GetResourceManager()->GetArchiveManager()->GetArchives();
+        if (archives != nullptr) {
+            for (const auto& archive : *archives) {
+                if (archive != nullptr && archive->GetPath() == archivePath) {
+                    return ReadStampedCrcFromArchive(archive, outCrc);
+                }
+            }
+        }
+    }
+
     int err = 0;
     zip_t* z = zip_open(archivePath.c_str(), ZIP_RDONLY, &err);
     if (z == nullptr) {
