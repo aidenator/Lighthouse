@@ -766,6 +766,15 @@ static bool WriteFileAtomically(const std::filesystem::path& path, const std::st
         }
     }
     std::filesystem::rename(tempPath, path, ec);
+#ifdef __3DS__
+    // The 3DS file system will not rename over an existing file (libctru reports ENOENT)
+    if (ec) {
+        std::error_code removeEc;
+        std::filesystem::remove(path, removeEc);
+        ec.clear();
+        std::filesystem::rename(tempPath, path, ec);
+    }
+#endif
     if (ec) {
         SPDLOG_ERROR("SaveManager: failed to replace \"{}\": {}", path.string(), ec.message());
         std::error_code removeEc;

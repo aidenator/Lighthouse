@@ -240,6 +240,43 @@ void ControlSchemes_Apply(int scheme) {
     }
 }
 
+#ifdef __3DS__
+// SDL's built-in 3DS mapping makes L and R the shoulders, ZL and ZR (New 3DS) the triggers and
+// the C-stick the right stick. The stock layout leaves Z on ZL, so move it to L where a thumb on
+// the shoulder rests, and add X and Y as first-person (C-up) and C-down for the face buttons.
+// Applied once per layout version, so later changes the player makes are kept.
+static constexpr int32_t k3dsLayoutVersion = 1;
+
+void ControlSchemes_Apply3dsLayoutOnce() {
+    if (CVarGetInteger(CVAR_SETTING("Controllers.3dsLayout"), 0) == k3dsLayoutVersion) {
+        return;
+    }
+    auto controller = GetPort0Controller();
+    if (controller == nullptr) {
+        return;
+    }
+    controller->ClearAllMappingsForDeviceType(Ship::SDLGamepad);
+    controller->AddDefaultMappings(Ship::SDLGamepad);
+
+    ClearButtonSDL(controller, BTN_Z);
+    BindButton(controller, BTN_Z, SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+    BindAxisToButton(controller, BTN_Z, SDL_CONTROLLER_AXIS_TRIGGERLEFT, 1);
+
+    ClearButtonSDL(controller, BTN_R);
+    BindButton(controller, BTN_R, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+    BindAxisToButton(controller, BTN_R, SDL_CONTROLLER_AXIS_TRIGGERRIGHT, 1);
+
+    // N64 L sat on the 3DS L, which is Z now
+    ClearButtonSDL(controller, BTN_L);
+
+    BindButton(controller, BTN_CUP, SDL_CONTROLLER_BUTTON_X);
+    BindButton(controller, BTN_CDOWN, SDL_CONTROLLER_BUTTON_Y);
+
+    CVarSetInteger(CVAR_SETTING("Controllers.3dsLayout"), k3dsLayoutVersion);
+    Ship::Context::GetRawInstance()->GetConsoleVariables()->Save();
+}
+#endif
+
 // Frames of C-Down passthrough left for a jigsaw podium.
 static int32_t sJigsawPodiumTTL = 0;
 

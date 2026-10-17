@@ -9,6 +9,10 @@ enum ControlScheme {
 
 #ifdef __cplusplus
 void ControlSchemes_Apply(int scheme);
+#ifdef __3DS__
+// Sets up the 3DS button layout the first time the game runs (and when the layout changes)
+void ControlSchemes_Apply3dsLayoutOnce();
+#endif
 
 extern "C" {
 #endif

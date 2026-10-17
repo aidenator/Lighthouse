@@ -19,6 +19,7 @@
 #endif
 #include <SDL2/SDL.h>
 
+#include "Controller/ControlSchemes.h"
 #include "DevTools/ThreadWatchdog.h"
 #include "GameStatus.h"
 #include "Interpolation/FrameInterpolation.h"
@@ -403,6 +404,9 @@ int SDL_main(int argc, char* argv[]) {
     }
 
     GameEngine::Create(argc, argv);
+#ifdef __3DS__
+    ControlSchemes_Apply3dsLayoutOnce();
+#endif
     // Both threads are created during core1_init, so allowlist them first.
     OS_EnableThreadEntry((void*)viMgr_entry);
     EnableThread5();
