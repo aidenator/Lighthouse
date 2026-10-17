@@ -473,6 +473,12 @@ int SDL_main(int argc, char* argv[]) {
     timeEndPeriod(1);
 #endif
     GameEngine::Instance->Destroy();
+#ifdef __3DS__
+    // Tear the context down here rather than in static destructors after main returns, so the
+    // window's Destroy (and with it SDL_Quit, which stops the sound threads) runs at a known
+    // point, before the audio player and everything else that uses SDL
+    Ship::Context::DestroyInstance();
+#endif
     GameEngine::RelaunchIfRequested(argc, argv);
     return 0;
 }
