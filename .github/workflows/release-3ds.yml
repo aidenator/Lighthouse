@@ -1,0 +1,83 @@
+name: Release 3DS
+
+# A 3DS release: push a tag named after the version in CMakeLists.txt's LH_3DS_VERSION, such as
+# 3ds-v1.0. The PC builds go in too, since players need one from the same commit to make bk.o2r.
+on:
+  push:
+    tags:
+      - "3ds-v*"
+
+jobs:
+  build:
+    uses: ./.github/workflows/main.yml
+
+  release:
+    name: Draft 3DS release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check the tag matches the version
+        run: |
+          version=$(sed -n 's/^\s*set(LH_3DS_VERSION "\([^"]*\)")/\1/p' CMakeLists.txt)
+          echo "LH_3DS_VERSION is $version"
+          test "$TAG" = "3ds-v$version" || { echo "Tag $TAG does not match LH_3DS_VERSION $version"; exit 1; }
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+
+      - name: Package and write notes
+        run: |
+          (cd artifacts/Lighthouse-3ds && zip -qr "../../Lighthouse-3DS-v$VERSION.zip" .)
+          (cd artifacts/Lighthouse-windows && zip -qr ../../Lighthouse-PC-Win64.zip .)
+          (cd artifacts/Lighthouse-mac && zip -qr ../../Lighthouse-PC-Mac.zip .)
+          cp artifacts/Lighthouse-linux/lighthouse.appimage Lighthouse-PC-Linux.appimage
+          cat > notes.md <<EOF
+          Banjo-Kazooie for the New Nintendo 3DS, as a homebrew app. No game data is included: you make
+          \`bk.o2r\` once from your own ROM (US v1.0, US v1.1, PAL or Japanese).
+
+          ## Install
+
+          1. **Make \`bk.o2r\`.** Download the PC build for your computer below, run it and choose your ROM.
+             Use the PC build from this release: \`bk.o2r\` from other Lighthouse versions does not work.
+             - Windows: \`bk.o2r\` appears next to \`Lighthouse.exe\`.
+             - Linux: it is written to \`~/.local/share/lighthouse/\`.
+             - macOS: see \`README-3DS.txt\` in the 3DS zip.
+          2. **Copy to the SD card.** Extract \`Lighthouse-3DS-v$VERSION.zip\` onto the root of the SD card, then put
+             your \`bk.o2r\` in \`3ds/lighthouse/\`, next to \`lighthouse.o2r\`.
+          3. **Play.** Start Banjo-Kazooie from the Homebrew Launcher. START + SELECT quits.
+
+          Full instructions and controls are in \`README-3DS.txt\` inside the 3DS zip and in
+          [docs/3DS.md](https://github.com/${{ github.repository }}/blob/$TAG/docs/3DS.md).
+
+          ## Downloads
+
+          | File | What it is |
+          | --- | --- |
+          | \`Lighthouse-3DS-v$VERSION.zip\` | The 3DS app, for the SD card |
+          | \`Lighthouse-PC-Win64.zip\` | PC build for Windows, to make \`bk.o2r\` |
+          | \`Lighthouse-PC-Mac.zip\` | PC build for macOS, to make \`bk.o2r\` |
+          | \`Lighthouse-PC-Linux.appimage\` | PC build for Linux, to make \`bk.o2r\` |
+
+          ## Changes
+          <!-- Write these before publishing -->
+
+          EOF
+
+      - uses: softprops/action-gh-release@v3
+        with:
+          name: Banjo-Kazooie 3DS v${{ env.VERSION }}
+          body_path: notes.md
+          files: |
+            Lighthouse-3DS-v*.zip
+            Lighthouse-PC-*.zip
+            Lighthouse-PC-Linux.appimage
+          draft: true
+          prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') }}

@@ -4,22 +4,43 @@ Lighthouse runs on the New Nintendo 3DS, New 3DS XL and New 2DS XL as a homebrew
 3DS, 3DS XL and 2DS start and play in an emulator set to that model, but have not been tried on
 real hardware, where they will be much slower.
 
-There is no download: the game's assets come from your own ROM, so you build the app and its asset
-archives yourself. This takes three steps:
+The app contains no game data. You make the game's asset archive, `bk.o2r`, once from your own ROM
+(US v1.0, US v1.1, PAL or Japanese). The game plays in the language of that ROM; the 3DS build has
+no menu for choosing a language pack.
+
+## Installing a release
+
+You need a 3DS with custom firmware ([Luma3DS](https://3ds.hacks.guide/)) and the Homebrew Launcher,
+a Banjo-Kazooie ROM in `.z64` format (see [Quick Start](../README.md#quick-start)), and a Windows,
+macOS or Linux computer.
+
+1. From the [releases page](https://github.com/aidenator/Lighthouse/releases), download
+   `Lighthouse-3DS-v<version>.zip` and the PC build for your computer.
+2. Run the PC build and choose your ROM. It writes `bk.o2r`: next to `Lighthouse.exe` on Windows,
+   or in `~/.local/share/lighthouse/` on Linux. On macOS, follow `README-3DS.txt` in the 3DS zip.
+   Once the title screen appears you can quit.
+
+   Use the PC build from the same release as the 3DS app. `bk.o2r` files made by any other
+   Lighthouse version, including official HarbourMasters releases, do not work with the 3DS app.
+3. Extract the 3DS zip onto the root of the SD card, and put `bk.o2r` in `3ds/lighthouse/` next to
+   `lighthouse.o2r`. See [step 3 below](#3-copy-to-the-sd-card) for the layout.
+4. Start **Banjo-Kazooie** from the Homebrew Launcher.
+
+## Building from source
+
+This takes three steps:
 
 1. Build the PC version from this branch and use it to turn your ROM into `bk.o2r`.
 2. Build the 3DS app in Docker.
 3. Copy the app and the two `.o2r` files to the SD card.
 
-## What you need
+### What you need
 
-* A New 3DS with custom firmware ([Luma3DS](https://3ds.hacks.guide/)) and the Homebrew Launcher
-* A supported Banjo-Kazooie ROM in `.z64` format (see [Quick Start](../README.md#quick-start)). All four
-  versions work on the 3DS: US v1.0, US v1.1, PAL and Japanese. The game plays in the language of the
-  ROM you extract (the 3DS build has no menu for choosing a language pack).
+* A New 3DS with custom firmware and the Homebrew Launcher
+* A supported Banjo-Kazooie ROM in `.z64` format
 * A Linux, macOS or Windows (WSL2) computer with Docker, CMake, Ninja, Python 3 and a C++ compiler
 
-## 1. Generate the asset archives on the PC
+### 1. Generate the asset archives on the PC
 
 The 3DS app reads two archives:
 
@@ -48,7 +69,7 @@ macOS. Once the game reaches its title screen you can quit.
 Use the `bk.o2r` the game generates. The one made by the `ExtractAssets` build target has no
 version stamp, and the 3DS app rejects it.
 
-## 2. Build the 3DS app
+### 2. Build the 3DS app
 
 The 3DS toolchain (devkitARM, libctru, citro3d) and the libraries Lighthouse needs are set up in a
 Docker image. Build the image once:
@@ -68,7 +89,7 @@ docker run --rm -v "$PWD":/src -w /src lighthouse-3ds cmake --build build-3ds
 
 The app is `build-3ds/Lighthouse.3dsx`.
 
-## 3. Copy to the SD card
+### 3. Copy to the SD card
 
 ```
 sdmc:/
@@ -126,3 +147,18 @@ docker run --rm --network host -v "$PWD":/src -w /src lighthouse-3ds \
 With `-s` the game's output and log stream back to the terminal (they arrive when the game exits).
 The [Azahar](https://azahar-emu.org/) emulator also runs the app, with the `.o2r` files in its
 `sdmc/3ds/lighthouse/` folder.
+
+### Making a release
+
+Pushing a tag named `3ds-v` plus the version in `LH_3DS_VERSION` (`CMakeLists.txt`), such as
+`3ds-v1.0`, runs `.github/workflows/release-3ds.yml`. It builds the 3DS app and the PC builds from
+that commit and creates a draft GitHub release with install notes. The release stays a draft until
+it is published by hand; fill in its "Changes" section first. The tag must match `LH_3DS_VERSION`,
+or the release job fails.
+
+```bash
+git tag 3ds-v1.0
+git push origin 3ds-v1.0
+```
+
+The zip's `README-3DS.txt` is `tools/3ds/README.txt`.

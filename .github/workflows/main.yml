@@ -215,6 +215,48 @@ jobs:
           name: Lighthouse-linux
           path: lighthouse.appimage
 
+  build-3ds:
+    needs: generate-port-o2r
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - uses: docker/setup-buildx-action@v3
+      - name: Build the 3DS toolchain image
+        uses: docker/build-push-action@v6
+        with:
+          context: tools/docker
+          file: tools/docker/3ds.Dockerfile
+          tags: lighthouse-3ds
+          load: true
+          cache-from: type=gha,scope=lighthouse-3ds
+          cache-to: type=gha,mode=max,scope=lighthouse-3ds
+      - name: Build
+        run: |
+          # The container runs as root on a checkout owned by the runner; let git read it for the build's commit info
+          docker run --rm -v "$PWD":/src -w /src \
+            -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0='*' \
+            lighthouse-3ds sh -c "cmake -S . -B build-3ds -G Ninja -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_TOOLCHAIN_FILE=/opt/devkitpro/cmake/3DS.cmake && cmake --build build-3ds"
+      - name: Download lighthouse.o2r
+        uses: actions/download-artifact@v8
+        with:
+          name: lighthouse.o2r
+          path: .
+      - name: Create Package
+        run: |
+          # Laid out like the SD card, so the zip can be extracted straight onto it
+          mkdir -p lighthouse-3ds/3ds/lighthouse
+          cp build-3ds/Lighthouse.3dsx lighthouse-3ds/3ds/
+          cp lighthouse.o2r lighthouse-3ds/3ds/lighthouse/
+          cp tools/3ds/README.txt lighthouse-3ds/README-3DS.txt
+      - name: Upload build
+        uses: actions/upload-artifact@v7
+        with:
+          name: Lighthouse-3ds
+          path: lighthouse-3ds
+
   build-switch:
     if: false
     needs: generate-port-o2r
