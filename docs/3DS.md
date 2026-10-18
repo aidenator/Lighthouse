@@ -48,10 +48,6 @@ macOS. Once the game reaches its title screen you can quit.
 Use the `bk.o2r` the game generates. The one made by the `ExtractAssets` build target has no
 version stamp, and the 3DS app rejects it.
 
-Copy `bk.o2r` into the repository folder. The 3DS build takes its app icon (a Mumbo token) from
-it; without it the app gets the Lighthouse logo instead. To use a `bk.o2r` somewhere else, add
-`-DLH_3DS_ICON_O2R=<path>` to the configure command below.
-
 ## 2. Build the 3DS app
 
 The 3DS toolchain (devkitARM, libctru, citro3d) and the libraries Lighthouse needs are set up in a
@@ -83,7 +79,7 @@ sdmc:/
         └── lighthouse.o2r
 ```
 
-Both `.o2r` files are in the repository folder after step 1.
+`lighthouse.o2r` is in the repository folder after step 1, and `bk.o2r` is in the PC build's data folder.
 
 To copy without removing the SD card, run [ftpd](https://github.com/mtheall/ftpd) on the 3DS and
 use any FTP client.
