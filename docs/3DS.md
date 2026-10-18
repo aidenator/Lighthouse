@@ -14,7 +14,9 @@ archives yourself. This takes three steps:
 ## What you need
 
 * A New 3DS with custom firmware ([Luma3DS](https://3ds.hacks.guide/)) and the Homebrew Launcher
-* A supported Banjo-Kazooie ROM in `.z64` format (see [Quick Start](../README.md#quick-start))
+* A supported Banjo-Kazooie ROM in `.z64` format (see [Quick Start](../README.md#quick-start)). All four
+  versions work on the 3DS: US v1.0, US v1.1, PAL and Japanese. The game plays in the language of the
+  ROM you extract; language packs are not available on the 3DS.
 * A Linux, macOS or Windows (WSL2) computer with Docker, CMake, Ninja, Python 3 and a C++ compiler
 
 ## 1. Generate the asset archives on the PC
