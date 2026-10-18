@@ -160,6 +160,9 @@ endif()
 # Set game compilation version
 set(VERSION us)
 if(CMAKE_SYSTEM_NAME STREQUAL "Nintendo3DS")
+    # Release version of the 3DS port, shown on the bottom screen and in the Homebrew Launcher
+    set(LH_3DS_VERSION "1.0")
+    add_compile_definitions(LH_3DS_VERSION="${LH_3DS_VERSION}")
     # newlib on ARM makes int32_t a long, which clashes with the decomp's s32 (an int). Both are
     # 32 bits, so redefine the 32-bit stdint types as int/unsigned. Dependencies must be built with
     # the same flags (see tools/docker/3ds.Dockerfile).
@@ -575,7 +578,7 @@ endif()
 if(CMAKE_SYSTEM_NAME STREQUAL "Nintendo3DS")
     ctr_generate_smdh(${PROJECT_NAME}.smdh
         NAME "${PROJECT_NAME}"
-        DESCRIPTION "Banjo-Kazooie"
+        DESCRIPTION "Banjo-Kazooie v${LH_3DS_VERSION}"
         AUTHOR "HarbourMasters (3DS port)"
     )
     ctr_create_3dsx(${PROJECT_NAME} SMDH ${PROJECT_NAME}.smdh)
