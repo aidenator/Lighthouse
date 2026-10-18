@@ -4,6 +4,9 @@
 
 A Banjo-Kazooie PC port with Anchor multiplayer, romhack and multi-language support, and a built-in randomizer.
 
+> **Nintendo 3DS:** this fork's `3ds` branch also runs on the New Nintendo 3DS as a homebrew app.
+> You build it yourself from your own ROM; see [docs/3DS.md](docs/3DS.md).
+
 Developers:
 * Malkierian
 * JeodC

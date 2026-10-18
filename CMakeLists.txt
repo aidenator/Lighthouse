@@ -180,7 +180,13 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Nintendo3DS")
     add_compile_definitions(osGetTime=n64_osGetTime)
 endif()
 
-option(LH_SLIM "Strip extras (networking, rumble, extractor, rando, dev tools, menus) for constrained targets" OFF)
+# The 3DS has the memory and CPU for the game only, so it always builds slim
+if(CMAKE_SYSTEM_NAME STREQUAL "Nintendo3DS")
+    set(LH_SLIM_DEFAULT ON)
+else()
+    set(LH_SLIM_DEFAULT OFF)
+endif()
+option(LH_SLIM "Strip extras (networking, rumble, extractor, rando, dev tools, menus) for constrained targets" ${LH_SLIM_DEFAULT})
 if(LH_SLIM)
     set(USE_NETWORKING OFF CACHE BOOL "Enable networking features" FORCE)
     set(LUS_HEADLESS_GUI ON CACHE BOOL "Never render ImGui; draw the game directly to the window" FORCE)
@@ -576,10 +582,27 @@ INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.nro DESTINATION . COMP
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Nintendo3DS")
+    # The icon is the Mumbo token, taken from the player's own bk.o2r so no game art is committed;
+    # without one, the Lighthouse logo
+    set(LH_3DS_ICON_O2R "${CMAKE_SOURCE_DIR}/bk.o2r" CACHE FILEPATH "bk.o2r to take the 3DS app icon from")
+    if(EXISTS "${LH_3DS_ICON_O2R}")
+        find_package(Python3 REQUIRED COMPONENTS Interpreter)
+        set(LH_3DS_ICON "${CMAKE_BINARY_DIR}/icon_3ds.png")
+        add_custom_command(
+            OUTPUT "${LH_3DS_ICON}"
+            COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/tools/3ds/make_icon.py" "${LH_3DS_ICON_O2R}" "${LH_3DS_ICON}"
+            DEPENDS "${CMAKE_SOURCE_DIR}/tools/3ds/make_icon.py" "${LH_3DS_ICON_O2R}"
+            VERBATIM
+        )
+    else()
+        message(STATUS "No bk.o2r at ${LH_3DS_ICON_O2R}: the 3DS app gets the Lighthouse logo as its icon")
+        set(LH_3DS_ICON "${CMAKE_SOURCE_DIR}/res/icon_3ds.png")
+    endif()
     ctr_generate_smdh(${PROJECT_NAME}.smdh
-        NAME "${PROJECT_NAME}"
-        DESCRIPTION "Banjo-Kazooie v${LH_3DS_VERSION}"
-        AUTHOR "HarbourMasters (3DS port)"
+        NAME "Banjo-Kazooie"
+        DESCRIPTION "Lighthouse 3DS port v${LH_3DS_VERSION}"
+        AUTHOR "HarbourMasters, 3DS port by aidenator"
+        ICON "${LH_3DS_ICON}"
     )
     ctr_create_3dsx(${PROJECT_NAME} SMDH ${PROJECT_NAME}.smdh)
 endif()
