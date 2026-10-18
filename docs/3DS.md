@@ -1,7 +1,8 @@
 # Nintendo 3DS
 
 Lighthouse runs on the New Nintendo 3DS, New 3DS XL and New 2DS XL as a homebrew app. The original
-3DS and 2DS have not been tested and are probably too slow.
+3DS, 3DS XL and 2DS start and play in an emulator set to that model, but have not been tried on
+real hardware, where they will be much slower.
 
 There is no download: the game's assets come from your own ROM, so you build the app and its asset
 archives yourself. This takes three steps:
@@ -96,7 +97,7 @@ shows the startup log, then the version and frame rate.
 | A / B | A / B |
 | L or ZL | Z |
 | R or ZR | R |
-| C-stick | C buttons |
+| C-stick (New 3DS) or D-pad | C buttons |
 | X | C-up (first-person view) |
 | Y | C-down |
 | START | START |

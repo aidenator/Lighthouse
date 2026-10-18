@@ -244,8 +244,10 @@ void ControlSchemes_Apply(int scheme) {
 // SDL's built-in 3DS mapping makes L and R the shoulders, ZL and ZR (New 3DS) the triggers and
 // the C-stick the right stick. The stock layout leaves Z on ZL, so move it to L where a thumb on
 // the shoulder rests, and add X and Y as first-person (C-up) and C-down for the face buttons.
-// Applied once per layout version, so later changes the player makes are kept.
-static constexpr int32_t k3dsLayoutVersion = 1;
+// The D-pad is a second set of C buttons, since the original 3DS has no C-stick (the game
+// does not use the N64 D-pad). Applied once per layout version, so later changes the player
+// makes are kept.
+static constexpr int32_t k3dsLayoutVersion = 2;
 
 void ControlSchemes_Apply3dsLayoutOnce() {
     if (CVarGetInteger(CVAR_SETTING("Controllers.3dsLayout"), 0) == k3dsLayoutVersion) {
@@ -271,6 +273,15 @@ void ControlSchemes_Apply3dsLayoutOnce() {
 
     BindButton(controller, BTN_CUP, SDL_CONTROLLER_BUTTON_X);
     BindButton(controller, BTN_CDOWN, SDL_CONTROLLER_BUTTON_Y);
+
+    ClearButtonSDL(controller, BTN_DUP);
+    ClearButtonSDL(controller, BTN_DDOWN);
+    ClearButtonSDL(controller, BTN_DLEFT);
+    ClearButtonSDL(controller, BTN_DRIGHT);
+    BindButton(controller, BTN_CUP, SDL_CONTROLLER_BUTTON_DPAD_UP);
+    BindButton(controller, BTN_CDOWN, SDL_CONTROLLER_BUTTON_DPAD_DOWN);
+    BindButton(controller, BTN_CLEFT, SDL_CONTROLLER_BUTTON_DPAD_LEFT);
+    BindButton(controller, BTN_CRIGHT, SDL_CONTROLLER_BUTTON_DPAD_RIGHT);
 
     CVarSetInteger(CVAR_SETTING("Controllers.3dsLayout"), k3dsLayoutVersion);
     Ship::Context::GetRawInstance()->GetConsoleVariables()->Save();
