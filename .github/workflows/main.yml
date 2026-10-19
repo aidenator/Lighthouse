@@ -224,6 +224,9 @@ jobs:
       - uses: docker/setup-buildx-action@v3
       - name: Build the 3DS toolchain image
         uses: docker/build-push-action@v6
+        env:
+          # The build record would be one more artifact, which the release has no use for
+          DOCKER_BUILD_RECORD_UPLOAD: false
         with:
           context: tools/docker
           file: tools/docker/3ds.Dockerfile
