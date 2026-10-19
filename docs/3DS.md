@@ -14,7 +14,7 @@ You need a 3DS with custom firmware ([Luma3DS](https://3ds.hacks.guide/)) and th
 a Banjo-Kazooie ROM in `.z64` format (see [Quick Start](../README.md#quick-start)), and a Windows,
 macOS or Linux computer.
 
-1. From the [releases page](https://github.com/aidenator/Lighthouse/releases), download
+1. From the [releases page](https://github.com/aidenator/Lighthouse-3DS/releases), download
    `Lighthouse-3DS-v<version>.zip` and the PC build for your computer.
 2. Run the PC build and choose your ROM. It writes `bk.o2r`: next to `Lighthouse.exe` on Windows,
    or in `~/.local/share/lighthouse/` on Linux. On macOS, follow `README-3DS.txt` in the 3DS zip.
@@ -52,8 +52,8 @@ build from this branch, not an official Lighthouse release: the asset formats ch
 versions, and the 3DS app only accepts archives from its own version.
 
 ```bash
-git clone --recursive -b 3ds https://github.com/aidenator/Lighthouse.git
-cd Lighthouse
+git clone --recursive https://github.com/aidenator/Lighthouse-3DS.git
+cd Lighthouse-3DS
 
 cmake -H. -Bbuild-cmake -GNinja -DCMAKE_BUILD_TYPE=Release
 cmake --build build-cmake --target GeneratePortO2R

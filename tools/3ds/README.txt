@@ -79,5 +79,5 @@ Updating: replace Lighthouse.3dsx and lighthouse.o2r with the new release's.
 Keep your saves. If the new release says bk.o2r must be remade, repeat step 1
 with that release's PC build.
 
-Source code and full documentation:
-https://github.com/aidenator/Lighthouse/blob/3ds/docs/3DS.md
+Project page, source code and full documentation:
+https://github.com/aidenator/Lighthouse-3DS

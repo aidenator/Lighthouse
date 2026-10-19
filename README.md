@@ -1,116 +1,111 @@
+# Lighthouse 3DS
+
+Banjo-Kazooie on the New Nintendo 3DS, as a homebrew app. This is a port of
+[Lighthouse](https://github.com/HarbourMasters/Lighthouse), HarbourMasters' native PC port of the
+game, to the 3DS's own graphics hardware.
+
 <p align="center">
-  <img alt="Lighthouse" src="./res/lighthouse_titlelogo.png" width="500">
+  <img alt="Banjo and Tooty playing in the opening cutscene on the top screen; the bottom screen shows Banjo-Kazooie, v1.0 and 20 fps" src="docs/images/3ds-intro.png" width="400">
+  &nbsp;
+  <img alt="The Banjo-Kazooie title screen on the top screen, with the version and frame rate on the bottom screen" src="docs/images/3ds-title.png" width="400">
 </p>
 
-A Banjo-Kazooie PC port with Anchor multiplayer, romhack and multi-language support, and a built-in randomizer.
+* Runs at the game's full 30 fps in normal play on a New 3DS, and starts in about three seconds
+* Saves to the SD card
+* All four versions of the game: US v1.0, US v1.1, PAL and Japanese
+* Controls laid out for the 3DS, with the C buttons on both the C-stick and the D-pad
 
-> **Nintendo 3DS:** this fork's `3ds` branch also runs on the New Nintendo 3DS as a homebrew app.
-> Download it from [Releases](https://github.com/aidenator/Lighthouse/releases) and make the game
-> data from your own ROM; see [docs/3DS.md](docs/3DS.md).
+No game data is included. You make it once from your own copy of the game, with the PC build that
+comes with each release.
 
-Developers:
-* Malkierian
-* JeodC
-* Caladius
-* aMannus
+## Download and install
 
-## Website & Discord
-Official Website: https://www.harbourmasters.org/
+Get the latest version from [Releases](https://github.com/aidenator/Lighthouse-3DS/releases). You
+need a 3DS with custom firmware ([Luma3DS](https://3ds.hacks.guide/)) and the Homebrew Launcher, a
+Banjo-Kazooie ROM in `.z64` format, and a Windows, macOS or Linux computer.
 
-*If you're having any trouble after reading through this `README`, feel free ask for help in the Lighthouse text channels. Please keep in mind that we do not condone piracy.*
+1. **Make `bk.o2r` from your ROM.** Download the PC build for your computer from the same release,
+   run it and choose your ROM. It writes `bk.o2r`, the game's graphics, sound and text.
+   Use the PC build from the same release: `bk.o2r` made by any other Lighthouse version will not
+   work.
+2. **Copy everything to the SD card.** Extract `Lighthouse-3DS-v<version>.zip` onto the root of the
+   SD card and put your `bk.o2r` next to `lighthouse.o2r`:
+   ```
+   3ds/
+   ├── Lighthouse.3dsx
+   └── lighthouse/
+       ├── bk.o2r          <- the one you made
+       └── lighthouse.o2r
+   ```
+3. **Play.** Start **Banjo-Kazooie** from the Homebrew Launcher. START + SELECT quits.
 
-# Quick Start
+`README-3DS.txt` in the zip has the full steps for each computer. Your ROM must be one of these
+(check with any SHA-1 tool):
 
-Lighthouse does not include any copyrighted assets.  You are required to provide a supported copy of the game.
+| Version | SHA-1 |
+| --- | --- |
+| US v1.0 | `1fe1632098865f639e22c11b9a81ee8f29c75d7a` |
+| US v1.1 | `ded6ee166e740ad1bc810fd678a84b48e245ab80` |
+| PAL | `bb359a75941df74bf7290212c89fbc6e2c5601fe` |
+| Japanese | `90726d7e7cd5bf6cdfd38f45c9acbf4d45bd9fd8` |
 
-### 1. Verify your ROM dump
-Any retail version listed below is supported. You can verify you have dumped a supported copy of the game by using the SHA-1 File Checksum Online at https://www.romhacking.net/hash/. 
+The game plays in the language of the ROM you use. A `.n64` or `.v64` ROM must be converted to
+`.z64` first.
 
-* `baserom.us.v10.z64`: `1fe1632098865f639e22c11b9a81ee8f29c75d7a`
-* `baserom.us.v11.z64`: `ded6ee166e740ad1bc810fd678a84b48e245ab80`
-* `baserom.jp.z64`:     `90726d7e7cd5bf6cdfd38f45c9acbf4d45bd9fd8`
-* `baserom.pal.z64`:    `bb359a75941df74bf7290212c89fbc6e2c5601fe`
+## Controls
 
-If you have multiple regions of the game and want to use them as language packs, see `# Language Packs` below.
+| 3DS | N64 |
+| --- | --- |
+| Circle Pad | Control stick |
+| A / B | A / B |
+| L or ZL | Z |
+| R or ZR | R |
+| C-stick or D-pad | C buttons |
+| X | C-up (first-person view) |
+| Y | C-down |
+| START | START |
+| START + SELECT | Quit to the Homebrew Launcher |
 
-### 2. Verify your ROM is in .z64 format
-Your ROM needs to be in .z64 format. If it's in .n64 format, use the following to convert it to a .z64: https://hack64.net/tools/swapper.php
+## Supported systems
 
-### 3. Download Lighthouse from [Releases](https://github.com/HarbourMasters/Lighthouse/releases)
+* **New Nintendo 3DS, New 3DS XL, New 2DS XL:** supported, and what this port is tested on.
+* **Original 3DS, 3DS XL, 2DS:** starts and plays in an emulator, but untested on real hardware,
+  where it will be much slower.
 
-### 4. Generating the O2R from the ROM and Play!
+Saves, settings and a log file are kept in `sdmc:/3ds/lighthouse/`. If the game does not start,
+`logs/Lighthouse.log` there says why.
 
-#### Windows
-* Extract every file from the zip into a folder of your choosing.
-* Run lighthouse.exe and select your compatible ROM.
+## Known issues
 
-#### Linux
-* Execute lighthouse.appimage. You may have to chmod +x the appimage via terminal.
-* When prompted, select your compatible ROM.
-* Saves, settings, `mods` and `bk.o2r` are stored in `~/.local/share/lighthouse/`. If the folder the appimage is in already has `lighthouse.cfg.json` or `bk.o2r`, that folder is used instead. Set `SHIP_HOME` to choose another folder.
+* A few particle effects that read back the screen are missing.
+* The grayscale and noise screen effects are not drawn, and the bottom of the intro waterfall has a
+  hard edge.
+* Entering or restarting a level can pause for about a second while it loads.
 
-#### MacOS
-* Extract every file from the zip into a folder of your choosing.
-* Run lighthouse and select your compatible ROM.
+## Building from source
 
-# Configuration
+See [docs/3DS.md](docs/3DS.md): it covers making the asset archives, building the 3DS app with the
+included Docker toolchain, sending builds to a 3DS over Wi-Fi, and making a release.
 
-Lighthouse ships with a file with many standard controller mappings that can be used as-is with most controllers. If your controller isn't recognized by Lighthouse, or isn't working properly, you can create your own custom mapping using the built-in mapper in the Settings menu.
+The PC version still builds from this repository too; [docs/LIGHTHOUSE.md](docs/LIGHTHOUSE.md) is
+the original Lighthouse README.
 
-### Default keyboard configuration
-| N64 | A | B | L | R | Z | Start | Analog stick | C buttons | D-Pad |
-| - | - | - | - | - | - | - | - | - | - |
-| Keyboard | X | C | E | R | Z | Space | WASD | Arrow keys | TFGH |
+## Credits
 
-### Other shortcuts
-| Keys | Action |
-| - | - |
-| ESC | Toggle menubar |
-| Ctrl+R / ⌘R | Reset |
-| F11 | Fullscreen |
-| Tab | Toggle Alternate assets |
+This port stands on the work of others:
 
-### Graphics Backends
-Currently, there are three rendering APIs supported: DirectX11 (Windows), OpenGL (all platforms), and Metal (macOS). You can change which API to use in the `Settings` menu of the menubar, which requires a restart.  If you're having an issue with crashing, you can change the API in the `lighthouse.cfg.json` file by finding the line `"Backend":{`... and changing the `id` value to `2` and set the `Name` to `OpenGL`. `DirectX 11` with id `1` is the default on Windows. `Metal` with id `3` is the default on macOS.
+* [Lighthouse](https://github.com/HarbourMasters/Lighthouse) by HarbourMasters: the PC port this is
+  built on (developers Malkierian, JeodC, Caladius and aMannus)
+* [libultraship](https://github.com/Kenix3/libultraship): the engine layer; the 3DS renderer and
+  platform code live in [this port's fork](https://github.com/aidenator/libultraship/tree/3ds)
+* The [Banjo-Kazooie decompilation](https://gitlab.com/banjo.decomp/banjo-kazooie) team
+* [devkitPro](https://devkitpro.org/), libctru and citro3d: the 3DS toolchain and libraries
 
-# Language Packs
+3DS port by aidenator.
 
-Lighthouse supports using multiple regions of Banjo-Kazooie as language packs. Generate your base `bk.o2r` file and once Lighthouse has started, open the imgui menu. Under General -> Languages, you will be able to select another ROM to extract as a language pack. PAL supports UK, French, and German, and Japanese adds Japanese support. After the language pack is generated, the language it brings will be added to the dropdown menu.
-
-# Romhacks
-
-Many romhacks can be extracted from patched ROMs and used as mods with Lighthouse. This can be done in-game using the Romhacks menu in the Settings section. If any hack isn't fully supported, the menu should inform you when extracting the mod. Most supported romhacks currently haven't been fully tested, so there may still be some issues.
-
-Lighthouse can also be launched directly to a romhack with a launch argument like so: `./Lighthouse.exe -hack jiggies-of-time`. This is a one-off and your loaded romhack is not saved to your remembered config when using a launch argument.
-
-_NOTE_: When using romhacks, only US v1.0 is supported, inherited from Banjo's Backpack. Therefore, it is recommended to use **US v1.0** as your base `bk.o2r` file.
-
-Romhacks also support language packs, scoped the same as mods are. Craft a language pack and add it to `mods/~lang/<hack>/` to see it in the dropdown menu. `<hack>` is a folder of the romhack's filename without the o2r extension; Lighthouse creates it for you when the romhack is enabled. Note that language packs for romhacks can work two ways:
-
-- A complete language pack includes every dialog, so it stands on its own.
-- A delta language pack only includes the dialogs the hack modified; everything else falls back to the base game's language, or to a base game language pack if one is installed for the same language.
-
-A base game language pack in `mods/~lang/` does not appear in the dropdown while a romhack is loaded, since on its own it would leave every line the hack replaced untranslated.
-
-# Custom Assets
-
-Custom assets are packed in `.o2r` or `.otr` files. To use custom assets, place them in the `mods` folder.
-
-If you're interested in creating and/or packing your own custom asset `.o2r`/`.otr` files, check out the following tools:
-* [**retro - OTR and O2R generator**](https://github.com/HarbourMasters64/retro)
-* [**fast64 - Blender plugin**](https://github.com/HarbourMasters/fast64)
-
-# Development
-
-### Building
-If you want to manually compile Lighthouse, please consult the [building instructions](https://github.com/HarbourMasters/Lighthouse/blob/develop/docs/BUILDING.md).
-
-### Playtesting
-If you want to playtest a continuous integration build, you can find them at the links below. Keep in mind that these are for playtesting only, and you will likely encounter bugs and possibly crashes.
-
-* [Windows](https://nightly.link/HarbourMasters/Lighthouse/workflows/main/develop/Lighthouse-windows.zip)
-* [macOS](https://nightly.link/HarbourMasters/Lighthouse/workflows/main/develop/Lighthouse-mac.zip)
-* [Linux](https://nightly.link/HarbourMasters/Lighthouse/workflows/main/develop/Lighthouse-linux.zip)
+This project is not affiliated with or endorsed by Nintendo, Rare or HarbourMasters. It contains
+no game assets; you must provide your own legally obtained copy of the game. Please do not ask for
+or share ROMs.
 
 <a href="https://github.com/Kenix3/libultraship/">
   <picture>
@@ -118,13 +113,3 @@ If you want to playtest a continuous integration build, you can find them at the
     <img alt="Powered by libultraship" src="./docs/poweredbylus.lightmode.png">
   </picture>
 </a>
-
-# Special Thanks:
-
-* The [Banjo Decomp](https://gitlab.com/banjo.decomp/banjo-kazooie) team
-* Our friends at the [Hackpack Discord Server](https://discord.gg/Cm2JuQvewN)
-* Fredomato, scorched11 for work on rando
-
-# AI Disclosure
-
-Lighthouse accepts pull requests that use AI, within policy guidelines, and has used AI assistance for information gathering particularly when the decomp documentation was younger. For more information please see the HarbourMasters [AI Policy](https://github.com/HarbourMasters/code-of-conduct/blob/main/AI_POLICY.md).
