@@ -40,10 +40,10 @@ jobs:
     - name: Cache build folders
       uses: actions/cache@v5
       with:
-        key: ${{ runner.os }}-o2r-build-${{ github.ref }}-${{ github.sha }}
+        key: ${{ runner.os }}-o2r-build-${{ github.repository }}-${{ github.ref }}-${{ github.sha }}
         restore-keys: |
-          ${{ runner.os }}-o2r-build-${{ github.ref }}
-          ${{ runner.os }}-o2r-build-
+          ${{ runner.os }}-o2r-build-${{ github.repository }}-${{ github.ref }}
+          ${{ runner.os }}-o2r-build-${{ github.repository }}-
         path: |
           Torch/cmake-build-release
     - name: Generate lighthouse.o2r
@@ -149,10 +149,10 @@ jobs:
       - name: Cache build folders
         uses: actions/cache@v5
         with:
-          key: linux-build-${{ github.ref }}-${{ github.sha }}
+          key: linux-build-${{ github.repository }}-${{ github.ref }}-${{ github.sha }}
           restore-keys: |
-            linux-build-${{ github.ref }}
-            linux-build-
+            linux-build-${{ github.repository }}-${{ github.ref }}
+            linux-build-${{ github.repository }}-
           path: |
             SDL2-2.30.3
             tinyxml2-10.0.0
