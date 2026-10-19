@@ -82,6 +82,8 @@ Saves, settings and a log file are kept in `sdmc:/3ds/lighthouse/`. If the game 
   hard edge.
 * Entering or restarting a level can pause for about a second while it loads.
 
+What's planned next, including 60 fps, is in [docs/ROADMAP.md](docs/ROADMAP.md).
+
 ## Building from source
 
 See [docs/3DS.md](docs/3DS.md): it covers making the asset archives, building the 3DS app with the
