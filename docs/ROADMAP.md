@@ -47,6 +47,18 @@ have the 3DS build `bk.o2r` itself on the first start, with a progress screen.
   fit, especially on an Old 3DS.
 * Extraction will take a while on a 3DS CPU, but only once.
 
+### Stereoscopic 3D
+
+Use the top screen's 3D, controlled by the console's 3D slider: draw the scene once for each eye,
+with each eye's view shifted by a different amount depending on depth, and the HUD at a depth of
+its own.
+
+* Drawing twice must not double the CPU cost: record a frame's draws once and replay them for the
+  second eye with only the eye's shift changed.
+* Settings for depth and convergence, and a way to keep close-ups from popping too far out of the
+  screen.
+* Lighthouse on PC has no 3D, so this is new work for the port.
+
 ### A CIA build
 
 Install from the HOME Menu as well as the Homebrew Launcher. A CIA can also be given more memory
