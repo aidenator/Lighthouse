@@ -207,6 +207,40 @@ Prefetcher& GetPrefetcher() {
     return *sPrefetcher;
 }
 
+#ifdef __3DS__
+// Where the renderer thread's time between draws goes, printed every few seconds
+struct PassTimes {
+    long long viWaitNs = 0;      // waiting for the next tick's VI count at a pass's start
+    long long prefetchWaitNs = 0; // waiting for the helper's blend
+    long long blendNs = 0;       // blending here, when no prefetch fit
+    long long betweenPassesNs = 0; // from one pass's end to the next one's start
+    long long lastPassEndNs = 0;
+    long long windowStartNs = 0;
+    int subframes = 0;
+    int passes = 0;
+    int blends = 0;
+
+    void Report(long long now) {
+        if (windowStartNs == 0) {
+            windowStartNs = now;
+            return;
+        }
+        if (now - windowStartNs < 3000000000LL || subframes == 0) {
+            return;
+        }
+        const double perFrame = 1e-6 / subframes;
+        printf("pacer: %d sub-frames in %d passes; per sub-frame: VI wait %.1f ms, prefetch wait %.1f, "
+               "blending %.1f (%d), between passes %.1f\n",
+               subframes, passes, viWaitNs * perFrame, prefetchWaitNs * perFrame, blendNs * perFrame, blends,
+               betweenPassesNs * perFrame);
+        *this = PassTimes{};
+        windowStartNs = now;
+        lastPassEndNs = now;
+    }
+};
+PassTimes sPassTimes;
+#endif
+
 // Draws the frame at the window's rate until its successor is due to latch, blending each sub-frame to
 // where its present lands between the previous frame and this one.
 void RunTimedPass(Gfx* commands, int fps) {
@@ -225,11 +259,21 @@ void RunTimedPass(Gfx* commands, int fps) {
     float prefetchT = -1.0f;
     // The tick after this list's sets its VI count when it polls input, right after the submit, and that
     // count decides when this frame latches.
-    const long long waitEndNs = OS_SteadyNs() + 3000000;
+    const long long waitStartNs = OS_SteadyNs();
+#ifdef __3DS__
+    if (sPassTimes.lastPassEndNs != 0) {
+        sPassTimes.betweenPassesNs += waitStartNs - sPassTimes.lastPassEndNs;
+    }
+    sPassTimes.passes++;
+#endif
+    const long long waitEndNs = waitStartNs + 3000000;
     while (port_getDemoViSerial() == sFrameViSerial && OS_SteadyNs() < waitEndNs) {
         port_serviceRenderRequests();
         port_waitDemoViSerial(sFrameViSerial, 250);
     }
+#ifdef __3DS__
+    sPassTimes.viWaitNs += OS_SteadyNs() - waitStartNs;
+#endif
     const int vis = std::max(port_getDemoViCount(), 2);
     const long long tickNs = 1000000000LL * vis / 60;
     const long long presentNs = 1000000000LL / fps;
@@ -256,7 +300,13 @@ void RunTimedPass(Gfx* commands, int fps) {
         auto& replacements = maps[count & 1];
         bool prefetched = false;
         if (prefetching) {
+#ifdef __3DS__
+            const long long prefetchWaitStart = OS_SteadyNs();
             prefetcher.Wait();
+            sPassTimes.prefetchWaitNs += OS_SteadyNs() - prefetchWaitStart;
+#else
+            prefetcher.Wait();
+#endif
             prefetching = false;
             if (std::fabs(prefetchT - t) <= kPrefetchSlack) {
                 t = prefetchT;
@@ -264,7 +314,14 @@ void RunTimedPass(Gfx* commands, int fps) {
             }
         }
         if (!prefetched) {
+#ifdef __3DS__
+            const long long blendStart = OS_SteadyNs();
             BuildReplacements(t, replacements);
+            sPassTimes.blendNs += OS_SteadyNs() - blendStart;
+            sPassTimes.blends++;
+#else
+            BuildReplacements(t, replacements);
+#endif
         }
         if (!last) {
             prefetchT = std::clamp((float)(now + runIntervalNs + presentNs - anchorNs) / (float)tickNs, 0.0f, 1.0f);
@@ -279,6 +336,9 @@ void RunTimedPass(Gfx* commands, int fps) {
         }
         PresentSubframe(interpreter);
         count++;
+#ifdef __3DS__
+        sPassTimes.subframes++;
+#endif
         if (last) {
             break;
         }
@@ -287,6 +347,10 @@ void RunTimedPass(Gfx* commands, int fps) {
         prefetcher.Wait();
     }
     SyncAltAssets();
+#ifdef __3DS__
+    sPassTimes.lastPassEndNs = OS_SteadyNs();
+    sPassTimes.Report(sPassTimes.lastPassEndNs);
+#endif
 }
 } // namespace
 
