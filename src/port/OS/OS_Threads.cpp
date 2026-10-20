@@ -5,11 +5,15 @@
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <functional>
 #include <map>
 #include <mutex>
 #include <set>
 #include <spdlog/spdlog.h>
 #include <thread>
+#ifdef __3DS__
+#include <fast/backends/gfx_3ds.h>
+#endif
 
 namespace {
 
@@ -19,12 +23,16 @@ struct OsThreadState {
     OSPri pri = 0;
     OSId id = 0;
     std::thread worker;
+#ifdef __3DS__
+    void* worker3ds = nullptr; // set instead of worker when the thread runs on a core of its own
+#endif
     bool started = false;
 };
 
 std::mutex sTableMutex;
 std::map<OSThread*, OsThreadState> sThreads;
 std::set<void*> sEnabledEntries;
+std::map<void*, int> sEntryCores;
 
 bool ThreadEnabled(void* entry) {
     return sEnabledEntries.count(entry) != 0;
@@ -59,6 +67,13 @@ extern "C" void OS_JoinDecompThreads(void) {
     std::lock_guard<std::mutex> lock(sTableMutex);
     for (auto& [thread, st] : sThreads) {
         (void)thread;
+#ifdef __3DS__
+        // A thread on another core can't be detached; one that didn't return is left running
+        if (st.worker3ds != nullptr && allReturned) {
+            Fast::Join3dsThread(st.worker3ds);
+            st.worker3ds = nullptr;
+        }
+#endif
         if (!st.worker.joinable()) {
             continue;
         }
@@ -79,6 +94,11 @@ extern "C" void OS_JoinDecompThreads(void) {
 extern "C" void OS_EnableThreadEntry(void* entry) {
     std::lock_guard<std::mutex> lock(sTableMutex);
     sEnabledEntries.insert(entry);
+}
+
+extern "C" void OS_SetThreadEntryCore(void* entry, int core) {
+    std::lock_guard<std::mutex> lock(sTableMutex);
+    sEntryCores[entry] = core;
 }
 
 extern "C" void OS_CreateThread(OSThread* thread, OSId id, void* entry, void* arg, void* sp, OSPri p) {
@@ -108,16 +128,34 @@ extern "C" void OS_StartThread(OSThread* thread) {
         std::lock_guard<std::mutex> exitLock(sExitMutex);
         sLiveThreads++;
     }
-    // Kept joinable: shutdown waits for these to leave their loops before the
-    // engine they draw and play audio through is destroyed.
-    it->second.worker = std::thread([entry, arg]() {
+    auto run = [entry, arg]() {
         entry(arg);
         {
             std::lock_guard<std::mutex> exitLock(sExitMutex);
             sLiveThreads--;
         }
         sExitCv.notify_all();
-    });
+    };
+#ifdef __3DS__
+    if (auto core = sEntryCores.find((void*)entry); core != sEntryCores.end()) {
+        auto* heldRun = new std::function<void()>(run);
+        it->second.worker3ds = Fast::Start3dsThreadOnCore(
+            [](void* p) {
+                auto* fn = (std::function<void()>*)p;
+                (*fn)();
+                delete fn;
+            },
+            heldRun, core->second);
+        if (it->second.worker3ds != nullptr) {
+            SPDLOG_INFO("Thread {} on core {}", it->second.id, core->second);
+            return;
+        }
+        delete heldRun;
+    }
+#endif
+    // Kept joinable: shutdown waits for these to leave their loops before the
+    // engine they draw and play audio through is destroyed.
+    it->second.worker = std::thread(run);
 }
 
 extern "C" void OS_StopThread(OSThread* thread) {
@@ -128,6 +166,9 @@ extern "C" void OS_StopThread(OSThread* thread) {
 
 extern "C" void OS_DestroyThread(OSThread* thread) {
     std::thread worker;
+#ifdef __3DS__
+    void* worker3ds = nullptr;
+#endif
     {
         std::lock_guard<std::mutex> lock(sTableMutex);
         auto it = sThreads.find(thread);
@@ -135,11 +176,19 @@ extern "C" void OS_DestroyThread(OSThread* thread) {
             return;
         }
         worker = std::move(it->second.worker);
+#ifdef __3DS__
+        worker3ds = it->second.worker3ds;
+#endif
         sThreads.erase(it);
     }
     if (worker.joinable()) {
         worker.join();
     }
+#ifdef __3DS__
+    if (worker3ds != nullptr) {
+        Fast::Join3dsThread(worker3ds);
+    }
+#endif
 }
 
 // Priority is recorded but not applied: the N64 scheduler was cooperative and

@@ -28,6 +28,8 @@ void OS_SetThreadPri(OSThread* thread, OSPri p);
 // osCreateThread/osStartThread pair is recorded but never launched, so threads
 // are revived deliberately, one consumer at a time.
 void OS_EnableThreadEntry(void* entry);
+// The CPU core a thread started from entry runs on, where the platform can choose (the 3DS)
+void OS_SetThreadEntryCore(void* entry, int core);
 
 // OS_MESG_BLOCK only blocks on queues opted in here.
 void OS_SetQueueBlocking(OSMesgQueue* mq, int enabled);

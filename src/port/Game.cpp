@@ -237,6 +237,10 @@ void EnableThread5() {
     OS_EnableThreadEntry((void*)joy_main);
     OS_SetQueueBlocking(si_getEventQueue(), 1);
     OS_EnableThreadEntry((void*)audioManagerThread_entry);
+#ifdef __3DS__
+    // Audio mixing on core 1, beside the game (core 2) and the renderer (core 0)
+    OS_SetThreadEntryCore((void*)audioManagerThread_entry, 1);
+#endif
     OS_SetQueueBlocking(audioManager_getFrameMesgQueue(), 1);
     OS_SetQueueBlocking(audioManager_getReplyMesgQueue(), 1);
 }

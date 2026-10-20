@@ -12,6 +12,10 @@
 #include <fast/Fast3dWindow.h>
 #include <fast/interpreter.h>
 
+#ifdef __3DS__
+#include <fast/backends/gfx_3ds.h>
+#endif
+
 #include "FrameInterpolation.h"
 #include "port/Enhancements/Events/Hooks/Events.h"
 #include "port/Nametag/Nametag.h"
@@ -144,8 +148,9 @@ class Prefetcher {
 public:
     void Start(float t, std::unordered_map<Mtx*, MtxF>* out) {
         std::lock_guard<std::mutex> lock(mMutex);
-        if (!mThread.joinable()) {
-            mThread = std::thread([this] { Run(); });
+        if (!mStarted) {
+            mStarted = true;
+            StartThread();
         }
         mT = t;
         mOut = out;
@@ -159,6 +164,20 @@ public:
     }
 
 private:
+    void StartThread() {
+#ifdef __3DS__
+        // Off the renderer's core: core 3 when the system grants it, else core 1
+        auto run = [](void* self) { ((Prefetcher*)self)->Run(); };
+        for (int core : { 3, 1 }) {
+            if (Fast::Start3dsThreadOnCore(run, this, core) != nullptr) {
+                printf("Interpolation helper on core %d\n", core);
+                return;
+            }
+        }
+#endif
+        mThread = std::thread([this] { Run(); });
+    }
+
     void Run() {
         std::unique_lock<std::mutex> lock(mMutex);
         for (;;) {
@@ -175,6 +194,7 @@ private:
     }
 
     std::thread mThread;
+    bool mStarted = false;
     std::mutex mMutex;
     std::condition_variable mCv;
     std::unordered_map<Mtx*, MtxF>* mOut = nullptr;
@@ -297,8 +317,16 @@ void GameEngine::ProcessGfxCommands(Gfx* commands) {
 
 uint32_t GameEngine::GetInterpolationFPS() {
 #ifdef LH_SLIM
-    // No frame interpolation on constrained targets: render at the game's own rate, which also
-    // skips recording interpolation data each tick.
+#ifdef __3DS__
+    // A New 3DS draws in-between frames up to the screen's 60 Hz (the pass drops the ones that
+    // don't fit); an Old 3DS can't afford them
+    static const bool sIsNew3ds = Fast::Is3dsNew();
+    if (sIsNew3ds) {
+        return 60;
+    }
+#endif
+    // No frame interpolation on other constrained targets: render at the game's own rate, which
+    // also skips recording interpolation data each tick.
     return EffectiveLogicFps();
 #endif
     if (CVarGetInteger(CVAR_SETTING("MatchRefreshRate"), 0)) {
