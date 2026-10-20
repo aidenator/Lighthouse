@@ -61,8 +61,35 @@ its own.
 
 ### A CIA build
 
-Install from the HOME Menu as well as the Homebrew Launcher. A CIA can also be given more memory
-and CPU time than a `.3dsx`, which matters most on an Old 3DS.
+Build a `.cia` alongside the `.3dsx`, so the game can be installed and started from the HOME Menu
+as well as the Homebrew Launcher.
+
+* This matters most on an Old 3DS: a CIA declares its own memory and CPU needs, so it can ask for
+  the larger memory mode and more of core 1's time, instead of making do with what the Homebrew
+  Launcher leaves over.
+* Needs a banner, an icon and a title ID, and `makerom` in the build and in CI.
+
+### A better bottom screen
+
+Today the bottom screen is a text console that shows the version and frame rate. Make it useful
+during play, for example:
+
+* **Level stats**: for each world, the notes, Jiggies, Mumbo tokens, empty honeycombs and Jinjos
+  collected out of the total, like the pause menu's totals but always on screen. The counts are
+  already in the game's save data.
+* **An overhead map** of the current world with Banjo's position. The game has no maps of its own,
+  so they would have to be drawn from each level's geometry, either ahead of time into images in
+  `bk.o2r` or live as a cheap top-down render.
+* A settings menu, for options such as draw distance and controls.
+
+Drawing the bottom screen with the GPU instead of the text console costs some renderer time, so it
+has to fit beside 60 fps.
+
+### A loading screen
+
+Loading `bk.o2r` takes about three seconds at startup, with only the startup log on the bottom
+screen. Show a progress bar there instead, filled as the archive is opened and its contents are
+indexed. This shares the startup screen with the `bk.o2r` error above.
 
 ### Lighthouse features
 
@@ -70,7 +97,6 @@ Bring back the PC version's features where they fit on the 3DS, for example:
 
 * The randomizer
 * Mods. The 3DS can't load code at runtime, so mods would have to be built into the app.
-* A settings menu on the bottom screen, for options such as draw distance and controls.
 
 ### Known issues
 
