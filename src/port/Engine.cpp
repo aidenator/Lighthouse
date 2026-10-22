@@ -12,6 +12,13 @@
 
 #include <fast/Fast3dWindow.h>
 #include <fast/interpreter.h>
+#ifdef __3DS__
+#include <fast/backends/gfx_3ds.h>
+// Moves the bottom screen's loading bar
+#define LOAD_STEP(fraction, step) Fast::Set3dsLoadProgress(fraction, step)
+#else
+#define LOAD_STEP(fraction, step)
+#endif
 #include "fast/resource/ResourceType.h"
 #include <fast/resource/factory/DisplayListFactory.h>
 #include <fast/resource/factory/TextureFactory.h>
@@ -389,12 +396,15 @@ void GameEngine::ScaleImGui() {
 
 void GameEngine::Create(int argc, char* argv[]) {
     Lighthouse::ParseLaunchArgs(argc, argv);
+    LOAD_STEP(0.0f, "Opening archives");
     const auto instance = Instance = new GameEngine();
     // DisplayListPatch::Run();
     // BK renders at 292x216, not the standard 320x240.
     GfxSetNativeDimensions(292, 216);
     instance->RunExtract(argc, argv);
+    LOAD_STEP(0.1f, "Reading game data");
     instance->FinishInit();
+    LOAD_STEP(0.48f, "Setting up");
     PortEnhancements_Init();
 #ifndef LH_SLIM
     Anchor::Init();
@@ -402,6 +412,7 @@ void GameEngine::Create(int argc, char* argv[]) {
     SaveManager_Init();
     ShipInit::InitAll();
     ShipInit::Init("BOOT");
+    LOAD_STEP(0.52f, "Starting the game");
     atexit([]() {
         if (Instance && Instance->context && Instance->context->GetControlDeck()) {
             for (int i = 0; i < 4; i++) {

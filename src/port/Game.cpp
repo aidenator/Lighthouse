@@ -382,6 +382,13 @@ static void SetAppImageHome() {
 }
 #endif
 
+#ifdef __3DS__
+// For the loading bar from C code
+extern "C" void port_3dsLoadProgress(float fraction, const char* step) {
+    Fast::Set3dsLoadProgress(fraction, step);
+}
+#endif
+
 /* Rename SDL_main to main for SDL compatibility */
 #ifdef __GNUC__
 #define SDL_main main
@@ -414,6 +421,9 @@ int SDL_main(int argc, char* argv[]) {
         }
     }
 
+#ifdef __3DS__
+    Fast::Show3dsLoadingScreen("Banjo-Kazooie", "v" LH_3DS_VERSION);
+#endif
     GameEngine::Create(argc, argv);
 #ifdef __3DS__
     ControlSchemes_Apply3dsLayoutOnce();
@@ -467,7 +477,8 @@ int SDL_main(int argc, char* argv[]) {
     // On a New 3DS the game logic gets core 2 to itself, alongside the renderer on core 0
     sGameThread3ds = Fast::Start3dsThreadOnCore([](void*) { gameLoop(); }, nullptr, 2);
     printf("Game thread on core %d\n", sGameThread3ds != nullptr ? 2 : 0);
-    // Startup is done: the bottom screen now shows the version and frame rate instead of the log
+    // Startup is done: the bottom screen now shows the game's stats and frame rate instead
+    Fast::Set3dsLoadProgress(1.0f, "Done");
     Fast::Show3dsStatusScreen("Banjo-Kazooie", "v" LH_3DS_VERSION);
     if (sGameThread3ds == nullptr) {
         sGameThread = std::thread(gameLoop);

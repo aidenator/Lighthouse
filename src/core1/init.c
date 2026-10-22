@@ -155,6 +155,10 @@ void func_8023DBDC(void) {
     func_8023DFF0(3);
 }
 
+#ifdef __3DS__
+void port_3dsLoadProgress(f32 fraction, const char* step);
+#endif
+
 void core1_init(void) {
 #if VERSION == VERSION_PAL
      osTvType = OS_TV_TYPE_PAL;
@@ -174,7 +178,13 @@ void core1_init(void) {
     assetCache_init();
     joy_thread_init();
     baMotor_init();
+#ifdef __3DS__
+    port_3dsLoadProgress(0.54f, "Loading sounds");
+#endif
     audioManager_init();
+#ifdef __3DS__
+    port_3dsLoadProgress(0.84f, "Loading graphics");
+#endif
     graphicsCache_init();
     ml_init();
     gctransition_reset();

@@ -13,6 +13,9 @@
 #include "port/Patches/Patches.h"
 #include "port/Romhack/RomhackConfig.h"
 #include "port/ShipInit.hpp"
+#ifdef __3DS__
+#include <fast/backends/gfx_3ds.h>
+#endif
 
 #ifdef _WIN32
 namespace {
@@ -236,6 +239,38 @@ extern "C" void port_setWindowTitle(int map_id) {
     char title[256];
     snprintf(title, sizeof(title), "Lighthouse - %s | Notes: %s | Jiggies: %s | Honeycombs: %s | Time: %s", levelName,
              noteStr, jiggyStr, hcStr, timeStr);
+
+#ifdef __3DS__
+    // The bottom screen shows the same stats, and the game's totals
+    const auto field = [](int line, const char* label, const char* value) {
+        char text[48];
+        snprintf(text, sizeof(text), "%-16s%10s", label, value);
+        Fast::Update3dsStatusLine(line, text);
+    };
+    char heading[48];
+    snprintf(heading, sizeof(heading), "*%s", levelName);
+    Fast::Update3dsStatusLine(0, heading);
+    field(2, "Notes", noteStr);
+    field(3, "Jiggies", jiggyStr);
+    field(4, "Honeycombs", hcStr);
+    field(5, "Time", timeStr);
+    Fast::Update3dsStatusLine(8, "*Game totals");
+    char total[4][16];
+    if (isNonGameplay) {
+        for (auto& value : total) {
+            snprintf(value, sizeof(value), "--");
+        }
+    } else {
+        snprintf(total[0], sizeof(total[0]), "%d", (int)jiggyscore_total());
+        snprintf(total[1], sizeof(total[1]), "%d", (int)itemscore_noteScores_getTotal());
+        snprintf(total[2], sizeof(total[2]), "%d", (int)item_getCount(ITEM_1C_MUMBO_TOKEN));
+        snprintf(total[3], sizeof(total[3]), "%d", (int)item_getCount(ITEM_16_LIFE));
+    }
+    field(10, "Jiggies", total[0]);
+    field(11, "Notes", total[1]);
+    field(12, "Mumbo tokens", total[2]);
+    field(13, "Lives", total[3]);
+#endif
 
 #ifdef _WIN32
     HWND hwnd = ResolveGameWindow();
