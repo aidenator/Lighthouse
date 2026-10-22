@@ -5,35 +5,35 @@ promises.
 
 ## Next release (v1.1)
 
-### 60 frames per second
+### Done so far
 
-The game itself runs at 30 frames a second in play (20 in many cutscenes), as on the N64. Lighthouse
-on PC draws extra in-between frames to show 60, but the 3DS build turns that off (`LH_SLIM`, in
-`GetInterpolationFPS()` in `src/port/Interpolation/FramePacing.cpp`).
+* **60 frames per second on the New 3DS.** Frame interpolation is back on, and Freezeezy Peak, the
+  heaviest level, holds about 60. The renderer records each frame and a second thread on core 2
+  sends it to the GPU, and the per-draw and per-triangle costs in libultraship's citro3d backend
+  were cut until a heavy frame takes about 9 ms of the 16.6 ms budget.
+* **More cores in use.** On a New 3DS:
 
-* Turn frame interpolation back on for the New 3DS.
-* Make room for it: every frame would need to be drawn in 16.6 ms. On hardware the renderer's CPU
-  time is about 10–12 ms a frame on average and about 14 ms in the heaviest scenes; the GPU (about
-  4 ms) and the game logic (about 3 ms) have plenty of room. The renderer's time grows with the
-  number of draws, so the cost of each draw in libultraship's citro3d backend is the thing to cut.
-* Fall back to the game's own rate in scenes that don't fit, rather than stuttering.
+  | Core | Work |
+  |---|---|
+  | 0 | Renderer and main loop |
+  | 1 | The game's audio thread (the app borrows 80% of this core's time) |
+  | 2 | Game logic, and sending recorded frames to the GPU |
+  | 3 | Building in-between frames, when the system grants the core |
 
-### Use every core the 3DS gives us
+* **A loading screen and a stats screen** on the bottom screen. While the game starts, a progress
+  bar, the step under way and the latest log line, with errors kept up in red. During play, the
+  current level's notes, Jiggies, honeycombs and time, the game's totals and the frame rate.
+* **Faster startup**: about 2.5 seconds, down from about 5 (and sometimes over 10). Settings are no
+  longer rewritten to the SD card when nothing changed, and SDL no longer looks for a romfs the app
+  doesn't have.
 
-| Core | Today | Plan |
-|---|---|---|
-| 0 | Renderer, main loop, audio | Renderer and main loop |
-| 1 | Unused | Audio, and other work that can move off core 0 (the app can borrow part of this core's time) |
-| 2 (New 3DS) | Game logic | Game logic |
-| 3 (New 3DS) | Unused | Spare renderer work, such as building in-between frames, when the system grants the core |
+### Still to do
 
-On an Old 3DS (cores 0 and 1 only), the layout should fall back sensibly.
-
-### A clear error when `bk.o2r` is missing or broken
-
-If `bk.o2r` isn't in `sdmc:/3ds/lighthouse/`, was made by a different Lighthouse version, or can't
-be read, show a plain message on screen saying what's wrong and how to fix it, instead of exiting
-or hanging.
+* **A clear error when `bk.o2r` is missing or broken.** If `bk.o2r` isn't in
+  `sdmc:/3ds/lighthouse/`, was made by a different Lighthouse version, or can't be read, show a
+  plain message on screen saying what's wrong and how to fix it, instead of exiting or hanging.
+  The loading screen already keeps errors up in red; the rest is saying what to do about them.
+* Check that the core layout falls back sensibly on an Old 3DS (cores 0 and 1 only).
 
 ## Later
 
@@ -71,12 +71,10 @@ as well as the Homebrew Launcher.
 
 ### A better bottom screen
 
-Today the bottom screen is a text console that shows the version and frame rate. Make it useful
-during play, for example:
+The bottom screen is a text console with the loading bar, the current level's stats, the game's
+totals and the frame rate. Make it more useful during play, for example:
 
-* **Level stats**: for each world, the notes, Jiggies, Mumbo tokens, empty honeycombs and Jinjos
-  collected out of the total, like the pause menu's totals but always on screen. The counts are
-  already in the game's save data.
+* **More stats**: Mumbo tokens, empty honeycombs and Jinjos per world, like the pause menu's totals.
 * **An overhead map** of the current world with Banjo's position. The game has no maps of its own,
   so they would have to be drawn from each level's geometry, either ahead of time into images in
   `bk.o2r` or live as a cheap top-down render.
@@ -84,12 +82,6 @@ during play, for example:
 
 Drawing the bottom screen with the GPU instead of the text console costs some renderer time, so it
 has to fit beside 60 fps.
-
-### A loading screen
-
-Loading `bk.o2r` takes about three seconds at startup, with only the startup log on the bottom
-screen. Show a progress bar there instead, filled as the archive is opened and its contents are
-indexed. This shares the startup screen with the `bk.o2r` error above.
 
 ### Lighthouse features
 
