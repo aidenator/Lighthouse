@@ -30,12 +30,28 @@ promises.
   `bk.o2r` can't be read (damaged or only partly copied), or it was made by another Lighthouse
   version, the bottom screen says so and how to fix it, and waits for START before exiting. A
   damaged `bk.o2r` used to hang startup.
-
-### Still to do
-
-* Check that the core layout falls back sensibly on an Old 3DS (cores 0 and 1 only).
+* **Old 3DS check.** On an Old 3DS (two cores), the game logic and the work of sending frames to
+  the GPU fall back to core 0 beside the renderer. Tested in the Azahar emulator in Old 3DS mode
+  (boots, and fits in an Old 3DS's memory) and on a New 3DS made to act like an Old one (268 MHz,
+  no L2 cache, cores 0 and 1 only): no crashes or freezes, but far too slow to play. See
+  [Old 3DS speed](#old-3ds-speed).
 
 ## Later
+
+### Old 3DS speed
+
+On a simulated Old 3DS the game runs at about 10 frames a second, and the game itself slows to
+about 10 updates a second instead of 30, so everything moves in slow motion. The CPU work measured
+per frame (about 46 ms) would allow about 20 frames a second, but every slow frame takes exactly
+98 ms, which points at a wait that runs into a timeout rather than a CPU that is too slow: the game
+logic and the renderer seem to wait on each other each frame. Places to look: the threads that now
+share core 0 at the same priority (a 3DS thread does not give way to another of equal priority
+until it blocks), and the audio thread's share of core 1, where the system's graphics service
+also runs.
+
+To test without an Old 3DS, configure with `-DLH_3DS_SIMULATE_OLD=ON` (and
+`-DLH_3DS_OLD_INTERPOLATION=ON` to also draw in-between frames). The log's `game:` line shows the
+game's own update rate.
 
 ### Make `bk.o2r` on the 3DS
 

@@ -385,7 +385,11 @@ uint32_t GameEngine::GetInterpolationFPS() {
     // A New 3DS draws in-between frames up to the screen's 60 Hz (the pass drops the ones that
     // don't fit); an Old 3DS can't afford them
     static const bool sIsNew3ds = Fast::Is3dsNew();
+#ifdef LH_3DS_OLD_INTERPOLATION
+    if (true) {
+#else
     if (sIsNew3ds) {
+#endif
         return 60;
     }
 #endif

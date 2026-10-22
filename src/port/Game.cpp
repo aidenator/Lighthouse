@@ -461,8 +461,10 @@ int SDL_main(int argc, char* argv[]) {
             worstMs = std::max(worstMs, ms);
             frames++;
             if (Clock::now() - summaryStart >= std::chrono::seconds(3)) {
-                printf("game: busy %.1f ms per frame (worst %.0f), waiting %.1f\n", totalMs / frames, worstMs,
-                       waitedMs / frames);
+                // The game's own rate (normally 30 or 20 a second): lower means the game itself slows down
+                const double seconds = std::chrono::duration<double>(Clock::now() - summaryStart).count();
+                printf("game: %.1f frames/s, busy %.1f ms per frame (worst %.0f), waiting %.1f\n",
+                       frames / seconds, totalMs / frames, worstMs, waitedMs / frames);
                 summaryStart = Clock::now();
                 waitedMs = 0;
                 totalMs = 0;

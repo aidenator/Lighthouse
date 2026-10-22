@@ -163,6 +163,16 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Nintendo3DS")
     # Release version of the 3DS port, shown on the bottom screen and in the Homebrew Launcher
     set(LH_3DS_VERSION "1.0")
     add_compile_definitions(LH_3DS_VERSION="${LH_3DS_VERSION}")
+    # Testing aids for the Old 3DS: run a New 3DS as one (268 MHz, no L2 cache, cores 0 and 1 only),
+    # and draw in-between frames on an Old 3DS too
+    option(LH_3DS_SIMULATE_OLD "Run a New 3DS like an Old 3DS" OFF)
+    option(LH_3DS_OLD_INTERPOLATION "Draw in-between frames (60 fps) on an Old 3DS" OFF)
+    if(LH_3DS_SIMULATE_OLD)
+        add_compile_definitions(LH_3DS_SIMULATE_OLD)
+    endif()
+    if(LH_3DS_OLD_INTERPOLATION)
+        add_compile_definitions(LH_3DS_OLD_INTERPOLATION)
+    endif()
     # newlib on ARM makes int32_t a long, which clashes with the decomp's s32 (an int). Both are
     # 32 bits, so redefine the 32-bit stdint types as int/unsigned. Dependencies must be built with
     # the same flags (see tools/docker/3ds.Dockerfile).

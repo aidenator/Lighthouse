@@ -51,6 +51,9 @@ def main(src, dst):
     for colour in ("PINK", "GREEN", "RED", "YELLOW"):
         for i in (1, 2):
             lair[f"{colour}_CAULDRON_{i}_ACTIVE"] = 1
+    # The game sets this the first time both ends of a cauldron pair are on. Without it, every
+    # active cauldron opens Bottles' first-pair dialog as its room loads (ch/cauldron.c).
+    lair["COMPLETED_A_WARP_CAULDRON_SET"] = 1
 
     missing = [k for k in [f"{w}_PUZZLE_PIECES_PLACED" for w in {**EXTRA_PUZZLES, **PUZZLES}]
                if k not in save["worlds"]["LAIR"]["progress"]]
