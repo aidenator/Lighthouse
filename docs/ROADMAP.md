@@ -26,13 +26,13 @@ promises.
 * **Faster startup**: about 2.5 seconds, down from about 5 (and sometimes over 10). Settings are no
   longer rewritten to the SD card when nothing changed, and SDL no longer looks for a romfs the app
   doesn't have.
+* **Clear errors when `bk.o2r` is missing or broken.** If `lighthouse.o2r` or `bk.o2r` is missing,
+  `bk.o2r` can't be read (damaged or only partly copied), or it was made by another Lighthouse
+  version, the bottom screen says so and how to fix it, and waits for START before exiting. A
+  damaged `bk.o2r` used to hang startup.
 
 ### Still to do
 
-* **A clear error when `bk.o2r` is missing or broken.** If `bk.o2r` isn't in
-  `sdmc:/3ds/lighthouse/`, was made by a different Lighthouse version, or can't be read, show a
-  plain message on screen saying what's wrong and how to fix it, instead of exiting or hanging.
-  The loading screen already keeps errors up in red; the rest is saying what to do about them.
 * Check that the core layout falls back sensibly on an Old 3DS (cores 0 and 1 only).
 
 ## Later
