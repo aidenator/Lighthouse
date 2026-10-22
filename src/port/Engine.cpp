@@ -266,7 +266,8 @@ static void LoadLanguagePacks() {
 }
 
 #ifdef LH_SLIM
-bool Slim_ArchiveVersionMatches(const std::shared_ptr<Ship::Archive>& archive); // Slim/SlimStubs.cpp
+// Stops with an error the player can act on if the archive is unreadable or from another version
+void Slim_CheckRomArchive(const std::shared_ptr<Ship::Archive>& archive, const std::string& name); // Slim/SlimStubs.cpp
 #endif
 
 void GameEngine::FinishInit() {
@@ -275,10 +276,7 @@ void GameEngine::FinishInit() {
         if (std::filesystem::exists(romPath)) {
             auto added = context->GetResourceManager()->GetArchiveManager()->AddArchive(romPath);
 #ifdef LH_SLIM
-            if (!Slim_ArchiveVersionMatches(added)) {
-                SPDLOG_CRITICAL("{} was made by a different Lighthouse version; regenerate it", archive);
-                exit(1);
-            }
+            Slim_CheckRomArchive(added, archive);
 #endif
         }
     }

@@ -20,6 +20,10 @@
 #include "port/UI/LighthouseModMenuWindow.h"
 #include "port/UI/Notification.h"
 
+#ifdef __3DS__
+#include <fast/backends/gfx_3ds.h>
+#endif
+
 extern "C" {
 #include "variables.h"
 }
@@ -277,32 +281,54 @@ void port_puzzleStep_clearForLevel(int32_t levelId) {
 
 // Checked on the archive FinishInit opens: opening bk.o2r costs seconds on the 3DS, mostly
 // indexing its file list, so it must not be opened just for this
-bool Slim_ArchiveVersionMatches(const std::shared_ptr<Ship::Archive>& archive) {
+// A problem the player has to fix before the game can start: say what it is and how, then exit
+[[noreturn]] static void FatalSetupError(const std::string& title, const std::string& message) {
+    SPDLOG_CRITICAL("{}: {}", title, message);
+#ifdef __3DS__
+    Fast::Show3dsFatalError(title.c_str(), message.c_str());
+#else
+    exit(1);
+#endif
+}
+
+void Slim_CheckRomArchive(const std::shared_ptr<Ship::Archive>& archive, const std::string& name) {
     if (archive == nullptr) {
-        return false;
+        FatalSetupError(name + " can't be read",
+                        "The file may be damaged or only partly copied. Copy it to the SD card again, or make it "
+                        "again from your ROM with the PC build of Lighthouse.");
     }
     auto file = archive->LoadFile("portVersion");
-    if (file == nullptr || !file->IsLoaded) {
-        return false;
+    const std::string wanted = std::to_string(gBuildVersionMajor) + "." + std::to_string(gBuildVersionMinor);
+    if (file == nullptr || !file->IsLoaded || file->Buffer->size() < 4) {
+        FatalSetupError(name + " is from another version",
+                        "It was made by an older Lighthouse. Make it again from your ROM with the PC build of "
+                        "Lighthouse " + wanted + ", from the same release as this app.");
     }
     auto stream = std::make_shared<Ship::MemoryStream>(file->Buffer->data(), file->Buffer->size());
     auto reader = std::make_shared<Ship::BinaryReader>(stream);
     reader->SetEndianness(Ship::Endianness::Big);
     const uint16_t major = reader->ReadUInt16();
     const uint16_t minor = reader->ReadUInt16();
-    return major == gBuildVersionMajor && minor == gBuildVersionMinor;
+    if (major != gBuildVersionMajor || minor != gBuildVersionMinor) {
+        FatalSetupError(name + " is from another version",
+                        "It was made by Lighthouse " + std::to_string(major) + "." + std::to_string(minor) +
+                            ", but this app needs " + wanted + ". Make it again from your ROM with the PC build "
+                            "of Lighthouse " + wanted + ", from the same release as this app.");
+    }
 }
 
 void GameEngine::RunExtract(int argc, char* argv[]) {
+    const std::string folder = Ship::Context::GetAppBundlePath();
     if (!portArchiveVersionMatch) {
-        SPDLOG_CRITICAL("lighthouse.o2r is missing");
-        exit(1);
+        FatalSetupError("lighthouse.o2r is missing", "Copy lighthouse.o2r from this release's download to\n" +
+                                                         folder + "/");
     }
     for (const auto& archive : kRomArchives) {
         const std::string path = Ship::Context::LocateFileAcrossAppDirs(archive, "bk");
         if (!std::filesystem::exists(path)) {
-            SPDLOG_CRITICAL("{} is missing; generate it from the ROM with a PC build of Lighthouse", archive);
-            exit(1);
+            FatalSetupError(archive + " is missing",
+                            "Make it from your Banjo-Kazooie ROM with the PC build of Lighthouse from this "
+                            "release, then copy it to\n" + folder + "/");
         }
     }
 }
