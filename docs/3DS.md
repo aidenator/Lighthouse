@@ -22,6 +22,8 @@ macOS or Linux computer.
 
    Use the PC build from the same release as the 3DS app. `bk.o2r` files made by any other
    Lighthouse version, including official HarbourMasters releases, do not work with the 3DS app.
+   A `bk.o2r` made for 3DS v1.0 or v1.1 works with either; each release's notes say when it has to
+   be made again.
 3. Extract the 3DS zip onto the root of the SD card, and put `bk.o2r` in `3ds/lighthouse/` next to
    `lighthouse.o2r`. See [step 3 below](#3-copy-to-the-sd-card) for the layout.
 4. Start **Banjo-Kazooie** from the Homebrew Launcher.
@@ -121,6 +123,7 @@ shows the startup log, then the version and frame rate.
 | Y | C-down |
 | START | START |
 | START + SELECT | Quit to the Homebrew Launcher |
+| 3D slider | Stereoscopic 3D (all the way down for 2D) |
 
 ## Files on the SD card
 
@@ -157,13 +160,14 @@ half the HUD's depth (left out, right in). The values show on the bottom screen 
 
 Pushing a tag named `3ds-v` plus the version in `LH_3DS_VERSION` (`CMakeLists.txt`), such as
 `3ds-v1.0`, runs `.github/workflows/release-3ds.yml`. It builds the 3DS app and the PC builds from
-that commit and creates a draft GitHub release with install notes. The release stays a draft until
-it is published by hand; fill in its "Changes" section first. The tag must match `LH_3DS_VERSION`,
-or the release job fails.
+that commit and creates a draft GitHub release with install notes. Its "Changes" section comes
+from `docs/release-notes/<tag>.md`, such as `docs/release-notes/3ds-v1.1.md`, if that file exists;
+write it before tagging, including whether `bk.o2r` has to be made again. The release stays a
+draft until it is published by hand. The tag must match `LH_3DS_VERSION`, or the release job fails.
 
 ```bash
-git tag 3ds-v1.0
-git push origin 3ds-v1.0
+git tag 3ds-v1.1
+git push origin 3ds-v1.1
 ```
 
 The zip's `README-3DS.txt` is `tools/3ds/README.txt`.

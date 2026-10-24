@@ -19,6 +19,7 @@ bk.o2r holds the game's graphics, sound and text. The 3DS cannot read a ROM, so
 the PC version of Lighthouse from this same release makes it. Use the PC build
 that came with this release: bk.o2r files made by other Lighthouse versions,
 including official HarbourMasters releases, do not work with this 3DS app.
+(A bk.o2r made for 3DS v1.0 or v1.1 works with either.)
 
 Windows:
   Extract Lighthouse-PC-Win64.zip, run Lighthouse.exe and choose your ROM when
@@ -58,8 +59,9 @@ client.
 3. Play
 -------
 
-Start Banjo-Kazooie from the Homebrew Launcher. The bottom screen shows a short
-startup log, then the version and frame rate.
+Start Banjo-Kazooie from the Homebrew Launcher. The bottom screen shows a
+loading bar, then the current level's stats, your game totals and the frame
+rate. On a New 3DS the game runs at 60 frames per second, also in 3D.
 
     3DS                     N64
     Circle Pad              Control stick
@@ -71,6 +73,7 @@ startup log, then the version and frame rate.
     Y                       C-down
     START                   START
     START + SELECT          Quit to the Homebrew Launcher
+    3D slider               Stereoscopic 3D (all the way down for 2D)
 
 Saves, settings and a log file (logs/Lighthouse.log) are kept in
 sdmc:/3ds/lighthouse/. If the game does not start, the log says why.

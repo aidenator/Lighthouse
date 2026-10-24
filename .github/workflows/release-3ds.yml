@@ -47,7 +47,8 @@ jobs:
           ## Install
 
           1. **Make \`bk.o2r\`.** Download the PC build for your computer below, run it and choose your ROM.
-             Use the PC build from this release: \`bk.o2r\` from other Lighthouse versions does not work.
+             Use the PC build from this release: \`bk.o2r\` from other Lighthouse versions does not work,
+             unless the notes below say an older one still does.
              - Windows: \`bk.o2r\` appears next to \`Lighthouse.exe\`.
              - Linux: it is written to \`~/.local/share/lighthouse/\`.
              - macOS: see \`README-3DS.txt\` in the 3DS zip.
@@ -68,9 +69,14 @@ jobs:
           | \`Lighthouse-PC-Linux.appimage\` | PC build for Linux, to make \`bk.o2r\` |
 
           ## Changes
-          <!-- Write these before publishing -->
 
           EOF
+          # The notes for this release, written ahead in the repository
+          if [ -f "docs/release-notes/$TAG.md" ]; then
+            cat "docs/release-notes/$TAG.md" >> notes.md
+          else
+            echo "<!-- Write these before publishing -->" >> notes.md
+          fi
 
       - uses: softprops/action-gh-release@v3
         with:

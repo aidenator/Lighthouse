@@ -10,7 +10,7 @@ game, to the 3DS's own graphics hardware.
   <img alt="The Banjo-Kazooie title screen on the top screen, with the version and frame rate on the bottom screen" src="docs/images/3ds-title.png" width="400">
 </p>
 
-* Runs at the game's full 30 fps in normal play on a New 3DS, and starts in about three seconds
+* 60 fps on a New 3DS, also in stereoscopic 3D, and starts in about three seconds
 * Saves to the SD card
 * All four versions of the game: US v1.0, US v1.1, PAL and Japanese
 * Controls laid out for the 3DS, with the C buttons on both the C-stick and the D-pad
@@ -65,6 +65,7 @@ The game plays in the language of the ROM you use. A `.n64` or `.v64` ROM must b
 | Y | C-down |
 | START | START |
 | START + SELECT | Quit to the Homebrew Launcher |
+| 3D slider | Stereoscopic 3D (all the way down for 2D) |
 
 ## Supported systems
 
@@ -82,8 +83,7 @@ Saves, settings and a log file are kept in `sdmc:/3ds/lighthouse/`. If the game 
   hard edge.
 * Entering or restarting a level can pause for about a second while it loads.
 
-What's coming in the next release (60 fps and stereoscopic 3D on a New 3DS) and after is in
-[docs/ROADMAP.md](docs/ROADMAP.md).
+What's planned next is in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Building from source
 
