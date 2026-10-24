@@ -148,6 +148,9 @@ With `-s` the game's output and log stream back to the terminal (they arrive whe
 The [Azahar](https://azahar-emu.org/) emulator also runs the app, with the `.o2r` files in its
 `sdmc/3ds/lighthouse/` folder.
 
+What made 60 fps possible, how much each change gained, and how to measure is in
+[3DS-PERFORMANCE.md](3DS-PERFORMANCE.md).
+
 ### Making a release
 
 Pushing a tag named `3ds-v` plus the version in `LH_3DS_VERSION` (`CMakeLists.txt`), such as
