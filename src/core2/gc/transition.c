@@ -275,6 +275,9 @@ void gctransition_draw(Gfx **gfx, Mtx **mtx, Vtx **vtx) {
     viewport_setRotation_vec3f(vp_rotation); //viewport_getRotation_vec3f
     viewport_update(); //camera_updateNormal
     viewport_setRenderViewportAndPerspectiveMatrix(gfx, mtx);
+    // [port] The jigsaw has a camera of its own: in stereoscopic 3D, measure its depth against that
+    // camera, so the picture starts at the screen's depth and pieces flying at the camera come out
+    gSPSetExtraGeometryMode((*gfx)++, G_EX_STEREO_OWN_CAMERA);
 
 
     sp58[0] = 0.0f;
@@ -301,6 +304,7 @@ void gctransition_draw(Gfx **gfx, Mtx **mtx, Vtx **vtx) {
             gDPSetTextureFilter((*gfx)++, G_TF_BILERP);
             gDPSetColorDither((*gfx)++, G_CD_MAGICSQ);
         }
+        gSPClearExtraGeometryMode((*gfx)++, G_EX_STEREO_OWN_CAMERA);
         return;
     }
 
@@ -381,6 +385,7 @@ void gctransition_draw(Gfx **gfx, Mtx **mtx, Vtx **vtx) {
     if(s_current_transition.anctrl != NULL){
         gDPSetTextureFilter((*gfx)++, G_TF_BILERP);
     }
+    gSPClearExtraGeometryMode((*gfx)++, G_EX_STEREO_OWN_CAMERA);
     viewport_restoreState();
     viewport_setRenderViewportAndPerspectiveMatrix(gfx, mtx);
     FrameInterpolation_RecordCloseChild();
