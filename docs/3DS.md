@@ -148,8 +148,10 @@ With `-s` the game's output and log stream back to the terminal (they arrive whe
 The [Azahar](https://azahar-emu.org/) emulator also runs the app, with the `.o2r` files in its
 `sdmc/3ds/lighthouse/` folder.
 
-What made 60 fps possible, how much each change gained, and how to measure is in
-[3DS-PERFORMANCE.md](3DS-PERFORMANCE.md).
+What made 60 fps and 3D possible, how much each change gained, and how to measure is in
+[3DS-PERFORMANCE.md](3DS-PERFORMANCE.md). To tune the 3D while testing, hold SELECT and tap the
+bottom screen: the top half moves the convergence distance (left nearer, right farther), the bottom
+half the HUD's depth (left out, right in). The values show on the bottom screen and in the log.
 
 ### Making a release
 

@@ -30,6 +30,12 @@ promises.
   `bk.o2r` can't be read (damaged or only partly copied), or it was made by another Lighthouse
   version, the bottom screen says so and how to fix it, and waits for START before exiting. A
   damaged `bk.o2r` used to hang startup.
+* **Stereoscopic 3D at 60 fps on the New 3DS**, with the 3D slider. Each eye's view shifts by
+  depth, with Banjo about at the screen's depth. The HUD and pause menu have a depth of their own,
+  and the jigsaw transition comes out of the screen as its pieces fly at the camera. With the
+  slider down, the game draws one image, at no extra cost. Textures now live in VRAM, and the GPU
+  starts on the left eye while the right one is built. Details in
+  [3DS-PERFORMANCE.md](3DS-PERFORMANCE.md#stereoscopic-3d).
 * **Old 3DS check.** On an Old 3DS (two cores), the game logic and the work of sending frames to
   the GPU fall back to core 0 beside the renderer. Tested in the Azahar emulator in Old 3DS mode
   (boots, and fits in an Old 3DS's memory) and on a New 3DS made to act like an Old one (268 MHz,
@@ -63,18 +69,6 @@ have the 3DS build `bk.o2r` itself on the first start, with a progress screen.
   fit, especially on an Old 3DS.
 * Extraction will take a while on a 3DS CPU, but only once.
 
-### Stereoscopic 3D
-
-Use the top screen's 3D, controlled by the console's 3D slider: draw the scene once for each eye,
-with each eye's view shifted by a different amount depending on depth, and the HUD at a depth of
-its own.
-
-* Drawing twice must not double the CPU cost: record a frame's draws once and replay them for the
-  second eye with only the eye's shift changed.
-* Settings for depth and convergence, and a way to keep close-ups from popping too far out of the
-  screen.
-* Lighthouse on PC has no 3D, so this is new work for the port.
-
 ### A CIA build
 
 Build a `.cia` alongside the `.3dsx`, so the game can be installed and started from the HOME Menu
@@ -94,7 +88,8 @@ totals and the frame rate. Make it more useful during play, for example:
 * **An overhead map** of the current world with Banjo's position. The game has no maps of its own,
   so they would have to be drawn from each level's geometry, either ahead of time into images in
   `bk.o2r` or live as a cheap top-down render.
-* A settings menu, for options such as draw distance and controls.
+* A settings menu, for options such as draw distance and controls, and the 3D's convergence and
+  HUD depth, which today are fixed (with a hidden SELECT + tap control for testing).
 
 Drawing the bottom screen with the GPU instead of the text console costs some renderer time, so it
 has to fit beside 60 fps.

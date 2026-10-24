@@ -1,7 +1,7 @@
 # 3DS performance notes
 
-What got the 3DS port from 30 fps to 60 fps on a New 3DS, how much each change gained, and what
-didn't work. All numbers were measured on a New 3DS, from the frame stats the app logs every 3
+What got the 3DS port from 30 fps to 60 fps on a New 3DS, then to 60 fps in stereoscopic 3D, how
+much each change gained, and what didn't work. All numbers were measured on a New 3DS, from the frame stats the app logs every 3
 seconds (see [Measuring](#measuring)).
 
 ## How a frame is drawn
@@ -123,35 +123,83 @@ Ranked by gain at the spot:
   the game culls what's off screen and swaps in simpler models at a distance. Compare runs at a
   fixed view, not across a play session.
 
+## Stereoscopic 3D
+
+With the 3D slider up, the replay thread replays each recorded frame twice, once into each eye's
+render target. The vertex shader shifts each vertex sideways by its depth:
+`shift * max(w - convergence, -cap * w)`. The interpreter's clip-space `w` is the distance from the
+camera, so this is one multiply-add per vertex, and the right eye reuses the left eye's vertices.
+The interpreter (core 0) does no extra work.
+
+At the Freezeezy spot (about 215 draws and 1,300 triangles), with the slider all the way up:
+
+| Change | fps | What it saved |
+|---|---|---|
+| Both eyes, first version | 48–50 | GPU time doubled to 13–15 ms |
+| **Textures in VRAM** | **57–58** | GPU time 13–15 → about 9.3 ms |
+| Flush only what the CPU wrote, not all of linear memory | 57–58 | Not measurable here |
+| **Start the GPU on the left eye while the right one is built** | **59.5–60** | The replay's wait for the GPU, 9.8 → 0.1–0.3 ms |
+
+* **Textures in VRAM.** The GPU samples VRAM much faster than linear memory. Uploads still go
+  through linear memory, then the copy engine moves them over (`GX_TextureCopy` with the plain
+  contiguous form, as citro3d's own `C3D_TexLoadImage` uses). All of a frame's uploads are done
+  before its draws, so each is one queue entry, at most 8 a frame. Textures past that go to linear
+  memory and move over in later frames. About 4.6 MB of VRAM is left after the two eyes' targets.
+* **Overlap.** citro3d keeps its GPU command queue stopped until the frame ends, so the replay
+  built a whole frame, then the GPU drew it, and the two added up: about 7.5 + 10 ms. Calling
+  `gxCmdQueueRun` on citro3d's queue (the first member of `__C3D_Context` in citro3d 1.7.1) after
+  the left eye starts the GPU on that eye while the right one is built.
+* **Depth rules.** The world uses a convergence of 384 (`w` units), and close-ups come out at most
+  as far as the distance goes in. The HUD gets a fixed depth (−0.5, slightly out of the screen).
+  That covers rectangles (`w` = 1) and anything drawn without depth testing after the world's last
+  depth-tested draw, since the game draws its counters and pause menu in perspective. The jigsaw
+  transition has a camera of its own and sets `G_EX_STEREO_OWN_CAMERA`, which measures its depth
+  against its own convergence (150, measured). Draws into offscreen framebuffers, and copies of the
+  screen drawn back, aren't shifted.
+* **Hidden tuning.** Hold SELECT and tap the bottom screen: the top half moves the convergence
+  (left nearer, right farther), the bottom half the HUD (left out, right in).
+
+### Bugs to avoid in 3D
+
+* **citro3d's GPU command queue holds 32 entries.** A VRAM upload that sent the draws before it,
+  then queued its copy, took two. A frame that loaded dozens of textures (skipping a cutscene)
+  overflowed it, and `gxCmdQueueAdd` panicked.
+* **Never stop a GX queue while it runs.** libctru stops counting completions once a stop is
+  requested, so the queue never looks finished and the next `C3D_FrameBegin` waits forever. That
+  is the likely cause of the hang when starting the queue mid-frame was first tried. citro3d only
+  stops it once it's idle, at the next frame's start.
+* **Texture copies with 4 KB rows froze the GPU.** Use dimensions of 0 for a contiguous copy.
+* **A replaced texture stayed bound.** Once a texture is freed, clear it from the texture units, or
+  the next draw hands the GPU freed memory.
+* **One copy of the screen for both eyes.** The game copies the screen once and draws the copy for
+  as long as the pause menu is open. With one texture, the right eye's copy overwrote the left's,
+  and the menu jumped when it opened. Each eye keeps its own.
+* **Culling at the screen's edge.** The interpreter drops triangles just off screen. A shifted eye
+  can see past the edge, so the test widens by the eye shift.
+
 ## Where the time goes now
 
 At the Freezeezy spot, per 16.6 ms frame:
 
-| Work | Time | Core |
-|---|---|---|
-| Interpreter (render thread) | about 9 ms | 0 |
-| Replay | 1–4.6 ms | 2 |
-| GPU | 4–8 ms | GPU |
-| Game logic | about 3 ms per update | 2 |
+| Work | 2D | 3D | Core |
+|---|---|---|---|
+| Interpreter (render thread) | about 9 ms | about 9.5 ms | 0 |
+| Replay | 1–4.6 ms | about 7.4 ms | 2 |
+| GPU | 4–8 ms | about 7–10 ms, alongside the replay | GPU |
+| Game logic | about 3 ms per update | about 3 ms per update | 2 |
 
 The render thread spends the rest of each frame waiting for vblank.
 
 ### Not tried yet
 
-These come from rt64-3ds's
-[porting notes](https://github.com/oneup03/rt64-3ds/blob/HEAD/docs/porting-a-game.md), the
-renderer behind BanjoRecomp3D:
+* **Particle thinning,** from rt64-3ds's
+  [porting notes](https://github.com/oneup03/rt64-3ds/blob/HEAD/docs/porting-a-game.md) (the
+  renderer behind BanjoRecomp3D). One Jiggy's sparkles were 225 of a frame's 360 draws.
+* **The right eye's CPU work.** It repeats the left eye's scan of each batch for varying colours
+  (about 11% of the replay) and its state setup. Keeping the scan's results would save about 1 ms.
 
-* **A cheaper frame-end flush.** `C3D_FrameEnd(0)` asks the GPU service on core 1, which audio
-  shares, to flush the whole linear heap from the CPU cache, which takes several ms. Flushing only
-  what was written (the vertex buffer already is, plus uploaded textures and the bottom-screen
-  console) would free that time.
-* **Textures in VRAM.** In GPU-bound scenes this took their Treasure Trove Cove from 30 to 60 fps.
-  Our GPU isn't the limit at 60 fps, but drawing both eyes in 3D doubles GPU time.
-* **Particle thinning.** One Jiggy's sparkles were 225 of a frame's 360 draws.
-
-They also found that **indexed triangles saved no time**, and that **BK's own culling and
-low-detail models must stay on** (Lighthouse's defaults).
+The rt64-3ds notes also found that **indexed triangles saved no time**, and that **BK's own culling
+and low-detail models must stay on** (Lighthouse's defaults).
 
 ## Old 3DS
 
